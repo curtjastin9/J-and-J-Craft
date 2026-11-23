@@ -1,0 +1,6 @@
+
+/* two-photo slots */
+.slot{margin-bottom:14px}.slot:last-child{margin-bottom:0}
+.slot-t{font-weight:700;font-size:14px;margin-bottom:6px}
+.slot-t small{font-weight:500;color:var(--muted);font-size:12px}
+.seg-b[type=button]{cursor:pointer}

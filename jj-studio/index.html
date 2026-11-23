@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J&J Craft and Print Studio – Order gifts and prints online</title>
+<meta name="description" content="Order souvenirs and prints from J&J Craft and Print Studio in Las Piñas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="site">
+  <div class="container nav">
+    <a href="index.html" class="brand"><span class="logo">J&amp;J</span><span>Craft &amp; Print Studio<small>Las Piñas</small></span></a>
+    <div class="nav-links">
+      <a class="link active" href="index.html">Home</a>
+      <a class="link" href="#offer">What we offer</a>
+      <a class="link" href="#how">How it works</a>
+      <a class="btn btn-primary btn-sm" href="order.html">Order now</a>
+    </div>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow"><i></i> Now taking orders online</span>
+      <h1>Gifts &amp; prints, <span>ordered</span> in minutes.</h1>
+      <p class="lead">Pick a souvenir or send us your print. See the price right away, then choose how you want to receive it. No more long chat threads.</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="order.html">Order now →</a>
+        <a class="btn btn-ghost btn-lg" href="#how">How it works</a>
+      </div>
+      <div class="hero-stats">
+        <div><b>5</b><span>items to choose from</span></div>
+        <div><b>3</b><span>ways to receive</span></div>
+        <div><b>GCash</b><span>pay first, we make it</span></div>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <div class="float a" id="hMug"><span class="chip">Mug</span></div>
+      <div class="float b" id="hRose"><span class="chip">Rose</span></div>
+      <div class="float c" id="hFrame"><span class="chip">Picture Frame</span></div>
+      <div class="float d" id="hShirt"><span class="chip">T-shirt Print</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="offer">
+  <div class="container">
+    <div class="sec-head">
+      <h2>What would you like today?</h2>
+      <p>Two ways to order, all in one place.</p>
+    </div>
+    <div class="offer-grid">
+      <a class="offer prod" href="order.html?type=product">
+        <div class="art" id="oProd"></div>
+        <h3>Products</h3>
+        <p>Souvenirs and trending gifts, ready to give.</p>
+        <div class="tags"><span>Mug</span><span>Rose</span><span>Picture Frame</span></div>
+        <span class="btn btn-yellow" style="width:max-content">Browse products →</span>
+      </a>
+      <a class="offer print" href="order.html?type=print">
+        <div class="art" id="oPrint"></div>
+        <h3>Print</h3>
+        <p>Upload what you need printed and see the price by size and color.</p>
+        <div class="tags"><span>Paper</span><span>T-shirt</span></div>
+        <span class="btn btn-primary" style="width:max-content">Start a print →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="block" id="how" style="padding-top:20px">
+  <div class="container">
+    <div class="sec-head">
+      <h2>How it works</h2>
+      <p>Four simple steps from tap to pickup.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>Choose</h3><p>Pick a product or a print and add it to your order.</p></div>
+      <div class="step"><h3>Receive</h3><p>Lalamove delivery, meet-up, or store pickup within Las Piñas.</p></div>
+      <div class="step"><h3>Send &amp; pay</h3><p>Send your order to our Facebook page, then pay first with GCash.</p></div>
+      <div class="step"><h3>We make it</h3><p>Once your payment is confirmed, we start working on your order.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" style="padding-top:20px">
+  <div class="container">
+    <div class="band">
+      <div>
+        <h2>Ready when you are.</h2>
+        <p>Start your order now. It only takes a few taps.</p>
+        <a class="btn btn-yellow btn-lg" href="order.html" style="margin-top:22px">Order now →</a>
+      </div>
+      <div class="info">
+        <div><b>Location</b> · Las Piñas City</div>
+        <div><b>Payment</b> · GCash, pay first</div>
+        <div><b>Receiving</b> · Lalamove, meet-up, or pickup</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-foot">
+  <div class="container">© J&amp;J Craft and Print Studio · Las Piñas · A thesis project</div>
+</footer>
+
+<script src="js/art.js"></script>
+<script>
+  const put = (id, html) => document.getElementById(id).innerHTML = html;
+  put('hMug', ART.mug + document.querySelector('#hMug').innerHTML);
+  put('hRose', ART.rose + document.querySelector('#hRose').innerHTML);
+  put('hFrame', ART.frame + document.querySelector('#hFrame').innerHTML);
+  put('hShirt', ART.tshirt + document.querySelector('#hShirt').innerHTML);
+  put('oProd', ART.mug);
+  put('oPrint', ART.tshirt);
+</script>
+</body>
+</html>
