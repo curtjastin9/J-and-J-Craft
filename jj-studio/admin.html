@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin – Print Prices</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/print.css">
+</head>
+<body>
+<header class="site"><div class="container nav">
+  <a href="index.html" class="brand"><span class="logo">J&amp;J</span><span>Admin<small>Print prices</small></span></a>
+  <div class="nav-links"><a class="link" href="print.html">View print page</a><button class="btn btn-ghost btn-sm" id="logout" type="button" hidden>Log out</button></div>
+</div></header>
+
+<main class="container">
+  <section class="pr-card ad-login" id="login">
+    <h1 class="pr-title" style="font-size:28px">Admin login</h1>
+    <p class="muted">Enter the admin password.</p>
+    <input type="password" id="pw" placeholder="Password" autocomplete="current-password">
+    <button class="btn btn-primary" id="go" type="button" style="width:100%">Log in</button>
+    <p class="pr-err" id="loginErr" hidden>Wrong password.</p>
+  </section>
+
+  <section class="ad-wrap" id="editor" hidden>
+    <h1 class="pr-title">Paper print prices</h1>
+    <p class="pr-sub">Prices are per page, in pesos. Changes show on the print page right after you save.</p>
+    <div id="tables"></div>
+    <div class="ad-bar">
+      <button class="btn btn-primary btn-lg" id="save" type="button">Save prices</button>
+      <button class="btn btn-ghost btn-lg" id="reset" type="button">Reset to default</button>
+      <span class="ad-ok" id="ok" hidden>Saved ✓</span>
+    </div>
+    <p class="muted">Temporary setup: prices and the password are saved in this browser only, so other devices will not see your changes. When the PHP/MySQL back end is added, this page will save to the database with a real login.</p>
+  </section>
+</main>
+
+<script src="js/prices.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

@@ -1,63 +1,6 @@
-/* Simple vector illustrations used as placeholders until real product photos are added.
-   To use a real photo later, replace the `art` field in catalog (see order.js) with an <img>. */
 const ART = {
-  mug: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="100" cy="178" rx="64" ry="8" fill="#000" opacity=".1"/>
-    <path d="M150 86h9a23 23 0 0 1 0 46h-9" fill="none" stroke="#E4262C" stroke-width="12" stroke-linecap="round"/>
-    <path d="M46 60h108v82a28 28 0 0 1-28 28H74a28 28 0 0 1-28-28z" fill="#E4262C"/>
-    <rect x="58" y="70" width="9" height="86" rx="4.5" fill="#fff" opacity=".28"/>
-    <ellipse cx="100" cy="60" rx="54" ry="10" fill="#B81B21"/>
-    <ellipse cx="100" cy="60" rx="47" ry="7" fill="#6B3A26"/>
-    <circle cx="100" cy="114" r="25" fill="#FFC72C"/>
-    <text x="100" y="121" text-anchor="middle" font-family="Baloo 2,Arial" font-weight="800" font-size="20" fill="#2B1B17">J&amp;J</text>
-    <path d="M84 40c-7-9 7-14 0-24M104 40c-7-9 7-14 0-24M124 40c-7-9 7-14 0-24" fill="none" stroke="#2B1B17" stroke-opacity=".28" stroke-width="4" stroke-linecap="round"/>
-  </svg>`,
-
-  rose: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <path d="M100 104C100 140 95 165 100 194" stroke="#2E7D32" stroke-width="7" fill="none" stroke-linecap="round"/>
-    <path d="M99 150C72 138 60 148 54 160C78 172 94 166 99 150z" fill="#43A047"/>
-    <path d="M101 168C126 156 140 164 146 176C122 188 106 182 101 168z" fill="#388E3C"/>
-    <path d="M86 98l-6 12M114 98l6 12" stroke="#2E7D32" stroke-width="6" stroke-linecap="round"/>
-    <circle cx="100" cy="68" r="44" fill="#C62828"/>
-    <path d="M62 66c4-20 22-34 40-34 22 0 38 16 38 36 0 22-18 42-40 42-24 0-40-18-38-44z" fill="#E53935"/>
-    <path d="M100 68m-27 2a27 27 0 1 1 29 25" fill="none" stroke="#FF8A80" stroke-width="6" stroke-linecap="round"/>
-    <path d="M100 66m-14 2a14 14 0 1 1 15 13" fill="none" stroke="#FFCDD2" stroke-width="5" stroke-linecap="round"/>
-    <circle cx="101" cy="66" r="4" fill="#C62828"/>
-  </svg>`,
-
-  frame: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="100" cy="180" rx="66" ry="7" fill="#000" opacity=".1"/>
-    <rect x="28" y="28" width="144" height="140" rx="8" fill="#8D5524"/>
-    <rect x="28" y="28" width="144" height="140" rx="8" fill="none" stroke="#6F3F17" stroke-width="3"/>
-    <rect x="42" y="42" width="116" height="112" fill="#FFF8EC"/>
-    <rect x="52" y="52" width="96" height="92" fill="#BFE4F6"/>
-    <circle cx="124" cy="80" r="11" fill="#FFC72C"/>
-    <path d="M52 144 90 92l24 30 16-18 18 24v16z" fill="#43A047"/>
-    <path d="M90 92l-12 16 8-3 4 8 8-6z" fill="#fff" opacity=".7"/>
-    <rect x="46" y="46" width="108" height="104" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>
-  </svg>`,
-
-  paper: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <rect x="58" y="34" width="100" height="136" rx="6" fill="#E5DCCB" transform="rotate(6 108 100)"/>
-    <path d="M44 28h84l28 28v118a6 6 0 0 1-6 6H44a6 6 0 0 1-6-6V34a6 6 0 0 1 6-6z" fill="#fff" stroke="#E5DCCB" stroke-width="3"/>
-    <path d="M128 28v22a6 6 0 0 0 6 6h22z" fill="#F0E4D0"/>
-    <rect x="52" y="44" width="62" height="9" rx="4.5" fill="#2B1B17"/>
-    <rect x="52" y="62" width="40" height="6" rx="3" fill="#BDB2A6"/>
-    <rect x="52" y="82" width="86" height="42" rx="6" fill="#FFC72C"/>
-    <circle cx="76" cy="98" r="8" fill="#E4262C"/>
-    <path d="M52 124l26-18 20 14 14-10 26 14v0H52z" fill="#2E9B5B"/>
-    <rect x="52" y="136" width="86" height="6" rx="3" fill="#BDB2A6"/>
-    <rect x="52" y="150" width="62" height="6" rx="3" fill="#BDB2A6"/>
-  </svg>`,
-
-  tshirt: `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="100" cy="184" rx="60" ry="6" fill="#000" opacity=".1"/>
-    <path d="M68 30l32 12 32-12 44 26-20 38-18-9v85H62V85l-18 9-20-38z" fill="#E4262C"/>
-    <path d="M82 31q18 24 36 0l-18 10z" fill="#B81B21"/>
-    <path d="M82 31q18 28 36 0" fill="none" stroke="#B81B21" stroke-width="5" stroke-linecap="round"/>
-    <path d="M44 94l18-9M156 94l-18-9" stroke="#B81B21" stroke-width="3" stroke-linecap="round" opacity=".5"/>
-    <circle cx="100" cy="108" r="24" fill="#FFC72C"/>
-    <text x="100" y="116" text-anchor="middle" font-family="Baloo 2,Arial" font-weight="800" font-size="21" fill="#2B1B17">J&amp;J</text>
-    <path d="M70 60l4 118" stroke="#fff" stroke-opacity=".18" stroke-width="8" stroke-linecap="round"/>
-  </svg>`
+  mug: `<svg viewBox="0 0 240 190" width="100%" height="100%" role="img" aria-label="Custom printed mug"><ellipse cx="111" cy="159" rx="74" ry="12" fill="#9b5a4b" opacity=".16"/><path d="M166 57h21c31 0 34 63 0 67h-22" fill="none" stroke="#b91d2a" stroke-width="15" stroke-linecap="round"/><rect x="49" y="35" width="121" height="126" rx="17" fill="#d92332"/><ellipse cx="109.5" cy="38" rx="60.5" ry="13" fill="#f16b72"/><ellipse cx="109.5" cy="39" rx="49" ry="7" fill="#fff2e8"/><rect x="62" y="62" width="96" height="70" rx="7" fill="#fff4e8"/><path d="M72 119l24-27 17 16 15-20 20 31z" fill="#f4b6a8"/><circle cx="132" cy="79" r="8" fill="#f4c65e"/></svg>`,
+  rose: `<svg viewBox="0 0 180 200" width="100%" height="100%" role="img" aria-label="Decorative rose"><path d="M89 82C83 118 76 147 65 177M91 110c24 3 33 18 42 26M82 132c-19-3-31 6-40 18" fill="none" stroke="#398653" stroke-width="7" stroke-linecap="round"/><path d="M86 142c-17-17-30-9-42 8 19 8 34 4 42-8M111 129c15-18 31-11 43 5-18 10-34 8-43-5" fill="#64a76d"/><path d="M90 91c-31 0-44-28-24-48 4-27 38-31 51-11 27-8 46 18 29 40-2 23-32 33-56 19z" fill="#d92332"/><path d="M91 89c-18-14-16-34 1-43 19 8 23 26 7 42M70 48c13 3 21 13 22 28M119 40c-12 7-17 17-16 29" fill="none" stroke="#ff9a9f" stroke-width="5" stroke-linecap="round"/></svg>`,
+  frame: `<svg viewBox="0 0 200 180" width="100%" height="100%" role="img" aria-label="Picture frame"><rect x="27" y="15" width="146" height="148" rx="8" fill="#c58a4b"/><rect x="38" y="26" width="124" height="126" fill="#fff2d9"/><rect x="47" y="35" width="106" height="108" fill="#f6c7b9"/><circle cx="124" cy="63" r="17" fill="#ffd46d"/><path d="M47 126l36-42 22 24 17-19 31 37z" fill="#76a985"/><path d="M47 143h106" stroke="#8d552c" stroke-width="5"/></svg>`,
+  tshirt: `<svg viewBox="0 0 220 190" width="100%" height="100%" role="img" aria-label="Printed T-shirt"><path d="M70 32l25-13c7 16 23 16 30 0l25 13 39 26-22 31-21-13v91H54V76L33 89 11 58z" fill="#fff" stroke="#e3b6a9" stroke-width="5" stroke-linejoin="round"/><path d="M86 24c5 19 40 19 46 0" fill="none" stroke="#e3b6a9" stroke-width="4"/><rect x="75" y="73" width="70" height="54" rx="5" fill="#ffe4df"/><path d="M87 111l17-20 12 12 9-11 12 19z" fill="#d92332"/><circle cx="123" cy="87" r="6" fill="#f1bd58"/></svg>`
 };

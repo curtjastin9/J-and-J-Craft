@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print – J&J Craft and Print Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/print.css">
+</head>
+<body>
+<header class="site">
+  <div class="container nav">
+    <a href="index.html" class="brand"><span class="logo">J&amp;J</span><span>Craft &amp; Print Studio<small>Las Piñas</small></span></a>
+    <div class="nav-links">
+      <a class="link" href="index.html">Home</a>
+      <a class="link active" href="order.html">Order</a>
+      <a class="cart-pill" href="order.html?type=product&open=cart">🛒 <span>Your order</span> <b data-cart-count>0</b></a>
+    </div>
+  </div>
+</header>
+
+<main class="container pr">
+
+  <!-- STEP 1: category -->
+  <section id="stepCategory">
+    <h1 class="pr-title">What would you like to print?</h1>
+    <p class="pr-sub">Choose a category to get started.</p>
+    <div class="cat-grid">
+      <button class="cat" id="catPaper" type="button">
+        <div class="cat-art">📄</div>
+        <h2>Print Paper</h2>
+        <p>Upload a PDF or Word file and choose paper size and color.</p>
+        <span class="btn btn-primary">Print paper →</span>
+      </button>
+      <button class="cat" id="catShirt" type="button">
+        <div class="cat-art">👕</div>
+        <h2>Print T-shirt / Polo</h2>
+        <p>Custom printed shirts.</p>
+        <span class="btn btn-yellow">Coming soon</span>
+      </button>
+    </div>
+    <p class="pr-soon" id="soonMsg" hidden>T-shirt / Polo printing is not available online yet. Please message the studio on Facebook for now.</p>
+    <p style="margin-top:22px"><a class="back" href="order.html">← Back to order</a></p>
+  </section>
+
+  <!-- STEP 2: print paper -->
+  <section id="stepPaper" hidden>
+    <button class="back linkbtn-back" id="backCat" type="button">← Change category</button>
+    <h1 class="pr-title">Print Paper</h1>
+    <p class="pr-sub">Upload your file, then pick pages, paper and color. Price is per page.</p>
+
+    <div class="pr-grid">
+      <!-- LEFT: options -->
+      <div class="pr-main">
+
+        <div class="pr-card">
+          <div class="ed-h"><span class="ed-num">1</span><h3>Upload your file</h3></div>
+          <label class="drop" id="drop" for="file">
+            <input type="file" id="file" class="sr" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+            <span class="drop-ic">📎</span>
+            <strong>Tap to upload</strong><span>or drop your file here</span>
+            <small>PDF or Word (.doc, .docx) · up to 25 MB</small>
+          </label>
+          <div class="loaded" id="loaded" hidden>
+            <div class="file-ic" id="fIcon">📄</div>
+            <div class="loaded-info">
+              <b id="fName">file.pdf</b>
+              <small id="fMeta"></small>
+              <div class="pg-row">
+                <label for="pages">Total pages</label>
+                <input type="number" id="pages" min="1" max="2000" value="1">
+                <small id="pgNote"></small>
+              </div>
+            </div>
+            <label class="linkbtn" for="file">Change</label>
+          </div>
+          <p class="pr-err" id="err" hidden></p>
+        </div>
+
+        <div class="pr-card">
+          <div class="ed-h"><span class="ed-num">2</span><h3>Pages to print</h3></div>
+          <div class="chips" id="rangeChips">
+            <button class="chip on" data-range="all" type="button">All</button>
+            <button class="chip" data-range="odd" type="button">Odd Pages</button>
+            <button class="chip" data-range="even" type="button">Even Pages</button>
+            <button class="chip" data-range="custom" type="button">Custom</button>
+          </div>
+          <div id="customBox" hidden style="margin-top:12px">
+            <input class="txt-in" id="customIn" type="text" inputmode="numeric" placeholder="e.g. 1-3, 5, 8-10" autocomplete="off">
+            <small class="muted">Use commas for single pages and a dash for ranges.</small>
+            <p class="pr-err" id="rangeErr" hidden></p>
+          </div>
+          <p class="muted" id="rangeInfo" style="margin-top:10px">Upload a file to choose pages.</p>
+        </div>
+
+        <div class="pr-card" id="optCard">
+          <div class="ed-h"><span class="ed-num">3</span><h3>Paper</h3></div>
+          <div class="seg" id="typeSeg" role="radiogroup" aria-label="Paper type">
+            <button class="seg-b on" data-type="regular" type="button">Regular Bond Paper</button>
+            <button class="seg-b" data-type="aseries" type="button">A-Series</button>
+          </div>
+          <div class="chips" id="sizeChips" style="margin-top:12px"></div>
+
+          <div class="ed-h" style="margin-top:22px"><span class="ed-num">4</span><h3>Color</h3></div>
+          <div class="color-grid" id="colorGrid">
+            <button class="color-opt on" data-color="bw" type="button"><b>Black &amp; White</b><span id="pBw"></span></button>
+            <button class="color-opt" data-color="color" type="button"><b>Colored</b><span id="pColor"></span></button>
+          </div>
+
+          <div class="ed-h" style="margin-top:22px"><span class="ed-num">5</span><h3>Copies</h3></div>
+          <div class="qty"><button id="cMinus" type="button" aria-label="Less">−</button><span id="copies">1</span><button id="cPlus" type="button" aria-label="More">+</button></div>
+        </div>
+      </div>
+
+      <!-- RIGHT: preview, then summary below it -->
+      <aside class="pr-side">
+        <div class="pr-card pv-card">
+          <div class="pv-head"><h3>File preview</h3><small class="muted" id="pvNote"></small></div>
+          <div class="pv-body" id="pvBody">
+            <div class="pv-empty" id="pvEmpty"><span>📄</span>Your file will appear here after you upload it.</div>
+            <div class="pv-pages" id="pvPages" hidden></div>
+            <div class="pv-docx" id="pvDocx" hidden></div>
+          </div>
+        </div>
+
+        <div class="pr-card pr-sum">
+          <h3>Print summary</h3>
+          <div class="sum-rows">
+            <div><span>File</span><b id="sFile">—</b></div>
+            <div><span>Pages to print</span><b id="sRange">—</b></div>
+            <div><span>Paper</span><b id="sPaper">—</b></div>
+            <div><span>Color</span><b id="sColor">—</b></div>
+            <div><span>Pages × copies</span><b id="sQty">—</b></div>
+            <div><span>Price per page</span><b id="sUnit">—</b></div>
+          </div>
+          <div class="sum-total"><span>Total</span><b id="sTotal">₱0.00</b></div>
+          <button class="btn btn-primary btn-lg" id="add" type="button" disabled style="width:100%">Add to order</button>
+          <p class="muted center" id="addHint" style="margin-top:8px">Upload a file to continue.</p>
+          <p class="muted center" style="margin-top:6px">The shop confirms the final total.</p>
+        </div>
+      </aside>
+    </div>
+
+    <div class="pr-card" style="margin-top:22px">
+      <h3 style="margin-bottom:12px">Price list (per page)</h3>
+      <div id="priceTables"></div>
+    </div>
+  </section>
+</main>
+
+<script src="js/cart.js"></script>
+<script src="js/prices.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx-preview/0.1.20/docx-preview.min.js"></script>
+<script src="js/print.js"></script>
+</body>
+</html>
