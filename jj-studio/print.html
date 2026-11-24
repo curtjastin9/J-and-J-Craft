@@ -32,8 +32,8 @@
       <button class="cat" id="catPaper" type="button">
         <div class="cat-art">📄</div>
         <h2>Print Paper</h2>
-        <p>Upload a PDF or Word file and choose paper size and color.</p>
-        <span class="btn btn-primary">Print paper →</span>
+        <p>Upload a PDF or Word file, choose the paper size and color, and see the price right away.</p>
+        <span class="btn btn-primary">Print paper</span>
       </button>
       <button class="cat" id="catShirt" type="button">
         <div class="cat-art">👕</div>
@@ -50,7 +50,7 @@
   <section id="stepPaper" hidden>
     <button class="back linkbtn-back" id="backCat" type="button">← Change category</button>
     <h1 class="pr-title">Print Paper</h1>
-    <p class="pr-sub">Upload your file, then pick pages, paper and color. Price is per page.</p>
+    <p class="pr-sub">Upload your file, pick the pages, paper size and color. Price is per page.</p>
 
     <div class="pr-grid">
       <!-- LEFT: options -->
@@ -65,7 +65,7 @@
             <small>PDF or Word (.doc, .docx) · up to 25 MB</small>
           </label>
           <div class="loaded" id="loaded" hidden>
-            <div class="file-ic" id="fIcon">📄</div>
+            <div class="thumb" id="thumb">📄</div>
             <div class="loaded-info">
               <b id="fName">file.pdf</b>
               <small id="fMeta"></small>
@@ -75,7 +75,7 @@
                 <small id="pgNote"></small>
               </div>
             </div>
-            <label class="linkbtn" for="file">Change</label>
+            <label class="linkbtn" for="file">Change file</label>
           </div>
           <p class="pr-err" id="err" hidden></p>
         </div>
@@ -83,10 +83,10 @@
         <div class="pr-card">
           <div class="ed-h"><span class="ed-num">2</span><h3>Pages to print</h3></div>
           <div class="chips" id="rangeChips">
-            <button class="chip on" data-range="all" type="button">All</button>
-            <button class="chip" data-range="odd" type="button">Odd Pages</button>
-            <button class="chip" data-range="even" type="button">Even Pages</button>
-            <button class="chip" data-range="custom" type="button">Custom</button>
+            <button class="pchip on" data-range="all" type="button">All pages</button>
+            <button class="pchip" data-range="odd" type="button">Odd pages</button>
+            <button class="pchip" data-range="even" type="button">Even pages</button>
+            <button class="pchip" data-range="custom" type="button">Custom</button>
           </div>
           <div id="customBox" hidden style="margin-top:12px">
             <input class="txt-in" id="customIn" type="text" inputmode="numeric" placeholder="e.g. 1-3, 5, 8-10" autocomplete="off">
@@ -97,30 +97,31 @@
         </div>
 
         <div class="pr-card" id="optCard">
-          <div class="ed-h"><span class="ed-num">3</span><h3>Paper</h3></div>
+          <div class="ed-h"><span class="ed-num">3</span><h3>Paper size</h3></div>
           <div class="seg" id="typeSeg" role="radiogroup" aria-label="Paper type">
             <button class="seg-b on" data-type="regular" type="button">Regular Bond Paper</button>
             <button class="seg-b" data-type="aseries" type="button">A-Series</button>
           </div>
-          <div class="chips" id="sizeChips" style="margin-top:12px"></div>
+          <div class="size-grid" id="sizeGrid"></div>
+          <div class="size-info" id="sizeInfo"></div>
 
-          <div class="ed-h" style="margin-top:22px"><span class="ed-num">4</span><h3>Color</h3></div>
+          <div class="ed-h" style="margin-top:24px"><span class="ed-num">4</span><h3>Color</h3></div>
           <div class="color-grid" id="colorGrid">
-            <button class="color-opt on" data-color="bw" type="button"><b>Black &amp; White</b><span id="pBw"></span></button>
-            <button class="color-opt" data-color="color" type="button"><b>Colored</b><span id="pColor"></span></button>
+            <button class="color-opt on" data-color="bw" type="button"><i class="dot dot-bw"></i><b>Black &amp; White</b><span id="pBw"></span></button>
+            <button class="color-opt" data-color="color" type="button"><i class="dot dot-color"></i><b>Full Color</b><span id="pColor"></span></button>
           </div>
 
-          <div class="ed-h" style="margin-top:22px"><span class="ed-num">5</span><h3>Copies</h3></div>
-          <div class="qty"><button id="cMinus" type="button" aria-label="Less">−</button><span id="copies">1</span><button id="cPlus" type="button" aria-label="More">+</button></div>
+          <div class="ed-h" style="margin-top:24px"><span class="ed-num">5</span><h3>Copies</h3></div>
+          <div class="qty"><button id="cMinus" type="button" aria-label="Fewer copies">−</button><span id="copies">1</span><button id="cPlus" type="button" aria-label="More copies">+</button></div>
         </div>
       </div>
 
-      <!-- RIGHT: preview, then summary below it -->
+      <!-- RIGHT: preview, then summary -->
       <aside class="pr-side">
         <div class="pr-card pv-card">
           <div class="pv-head"><h3>File preview</h3><small class="muted" id="pvNote"></small></div>
           <div class="pv-body" id="pvBody">
-            <div class="pv-empty" id="pvEmpty"><span>📄</span>Your file will appear here after you upload it.</div>
+            <div class="pv-empty" id="pvEmpty"><span>📄</span><p id="pvEmptyTx">Your file will appear here after you upload it.</p></div>
             <div class="pv-pages" id="pvPages" hidden></div>
             <div class="pv-docx" id="pvDocx" hidden></div>
           </div>
@@ -131,7 +132,8 @@
           <div class="sum-rows">
             <div><span>File</span><b id="sFile">—</b></div>
             <div><span>Pages to print</span><b id="sRange">—</b></div>
-            <div><span>Paper</span><b id="sPaper">—</b></div>
+            <div><span>Paper size</span><b id="sPaper">—</b></div>
+            <div><span>Paper used</span><b id="sStock">—</b></div>
             <div><span>Color</span><b id="sColor">—</b></div>
             <div><span>Pages × copies</span><b id="sQty">—</b></div>
             <div><span>Price per page</span><b id="sUnit">—</b></div>
@@ -145,7 +147,8 @@
     </div>
 
     <div class="pr-card" style="margin-top:22px">
-      <h3 style="margin-bottom:12px">Price list (per page)</h3>
+      <h3 style="margin-bottom:4px">Price list and paper guide</h3>
+      <p class="muted" style="margin-bottom:6px">Price per page for every size we print.</p>
       <div id="priceTables"></div>
     </div>
   </section>
