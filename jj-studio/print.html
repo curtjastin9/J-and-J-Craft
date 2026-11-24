@@ -26,6 +26,7 @@
 
   <!-- STEP 1: category -->
   <section id="stepCategory">
+    <span class="eyebrow"><i></i> Print studio</span>
     <h1 class="pr-title">What would you like to print?</h1>
     <p class="pr-sub">Choose a category to get started.</p>
     <div class="cat-grid">
@@ -33,7 +34,7 @@
         <div class="cat-art">📄</div>
         <h2>Print Paper</h2>
         <p>Upload a PDF or Word file, choose the paper size and color, and see the price right away.</p>
-        <span class="btn btn-primary">Print paper</span>
+        <span class="btn btn-primary">Print paper →</span>
       </button>
       <button class="cat" id="catShirt" type="button">
         <div class="cat-art">👕</div>
@@ -119,12 +120,22 @@
       <!-- RIGHT: preview, then summary -->
       <aside class="pr-side">
         <div class="pr-card pv-card">
-          <div class="pv-head"><h3>File preview</h3><small class="muted" id="pvNote"></small></div>
+          <div class="pv-head">
+            <h3>File preview</h3>
+            <span class="pv-tools">
+              <small class="muted" id="pvNote"></small>
+              <button class="pv-expand" id="pvExpand" type="button" hidden aria-label="Enlarge preview">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+                Enlarge
+              </button>
+            </span>
+          </div>
           <div class="pv-body" id="pvBody">
             <div class="pv-empty" id="pvEmpty"><span>📄</span><p id="pvEmptyTx">Your file will appear here after you upload it.</p></div>
             <div class="pv-pages" id="pvPages" hidden></div>
-            <div class="pv-docx" id="pvDocx" hidden></div>
+            <div class="pv-docx" id="pvDocx" hidden title="Click to enlarge"></div>
           </div>
+          <p class="pv-tip">Tap any page to see it bigger.</p>
         </div>
 
         <div class="pr-card pr-sum">
@@ -153,6 +164,26 @@
     </div>
   </section>
 </main>
+
+<!-- Enlarged preview -->
+<div class="viewer" id="viewer" hidden role="dialog" aria-modal="true" aria-label="Enlarged file preview">
+  <div class="vw-bar">
+    <div class="vw-l">
+      <button class="vw-btn" id="vwPrev" type="button" aria-label="Previous page">‹</button>
+      <b id="vwTitle">Page 1</b>
+      <button class="vw-btn" id="vwNext" type="button" aria-label="Next page">›</button>
+      <span class="vw-badge yes" id="vwBadge" hidden>Will print</span>
+    </div>
+    <div class="vw-r">
+      <button class="vw-btn" id="vwOut" type="button" aria-label="Zoom out">−</button>
+      <span class="vw-zoom" id="vwZoom">100%</span>
+      <button class="vw-btn" id="vwIn" type="button" aria-label="Zoom in">+</button>
+      <button class="vw-btn txt" id="vwFit" type="button">Fit</button>
+      <button class="vw-btn close" id="vwClose" type="button" aria-label="Close">✕</button>
+    </div>
+  </div>
+  <div class="vw-body" id="vwBody"></div>
+</div>
 
 <script src="js/cart.js"></script>
 <script src="js/prices.js"></script>
