@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Products – J&J Craft and Print Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/print.css">
+<style>
+  .cat-art.svgart{width:96px;height:96px;border-radius:24px;padding:10px}
+  .cat-art.svgart svg{width:100%;height:100%}
+  a.cat{text-decoration:none;color:inherit}
+</style>
+</head>
+<body>
+<header class="site">
+  <div class="container nav">
+    <a href="index.html" class="brand"><span class="logo">J&amp;J</span><span>Craft &amp; Print Studio<small>Las Piñas</small></span></a>
+    <div class="nav-links">
+      <a class="link" href="index.html">Home</a>
+      <a class="link active" href="order.html">Order</a>
+      <a class="cart-pill" href="order.html?type=product&open=cart">🛒 <span>Your order</span> <b data-cart-count>0</b></a>
+    </div>
+  </div>
+</header>
+
+<main class="container pr">
+  <span class="eyebrow"><i></i> Products</span>
+  <h1 class="pr-title">What would you like to customize?</h1>
+  <p class="pr-sub">Pick a product, add your photo and text, and preview it in 3D.</p>
+
+  <div class="cat-grid">
+    <a class="cat" href="customize-mug.html">
+      <div class="cat-art svgart"><svg viewBox="0 0 120 120" role="img" aria-label="Mug"><path d="M82 40h10c18 0 19 36 0 38H81" fill="none" stroke="#b91d2a" stroke-width="9" stroke-linecap="round"/><rect x="26" y="26" width="64" height="78" rx="10" fill="#d92332"/><ellipse cx="58" cy="29" rx="32" ry="7" fill="#f16b72"/><rect x="34" y="44" width="48" height="34" rx="4" fill="#fff4e8"/><path d="M39 70l13-15 9 8 8-10 11 17z" fill="#f4b6a8"/></svg></div>
+      <h2>Custom Photo Mug</h2>
+      <p>Glossy ceramic mug with a front and an optional back photo.</p>
+      <span class="btn btn-primary">Customize mug →</span>
+    </a>
+    <a class="cat" href="customize-tumbler.html">
+      <div class="cat-art svgart"><svg viewBox="0 0 120 120" role="img" aria-label="Tumbler"><rect x="36" y="34" width="48" height="76" rx="13" fill="#7d4fb5"/><rect x="32" y="98" width="56" height="12" rx="6" fill="#efb8dc"/><rect x="40" y="26" width="40" height="12" rx="4" fill="#9a8fb8"/><path d="M48 26v-11c0-6 24-6 24 0v11" fill="none" stroke="#9a8fb8" stroke-width="5" stroke-linecap="round"/><rect x="45" y="52" width="30" height="26" rx="3" fill="#fff" opacity=".85"/></svg></div>
+      <h2>Custom Tumbler</h2>
+      <p>Insulated tumbler in 3 sizes. Add your photo and your own text.</p>
+      <span class="btn btn-yellow">Customize tumbler →</span>
+    </a>
+  </div>
+  <p style="margin-top:22px"><a class="back" href="order.html">← Back to order</a></p>
+</main>
+
+<footer class="site-foot">© J&J Craft and Print Studio · Las Piñas · A thesis project</footer>
+<script src="js/cart.js"></script>
+</body>
+</html>

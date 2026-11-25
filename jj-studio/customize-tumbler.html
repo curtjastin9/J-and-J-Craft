@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design your tumbler – J&J Craft and Print Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  [hidden]{display:none!important}
+  .tsz-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .tsz{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px;border:1.5px solid var(--line);border-radius:16px;background:#fff;cursor:pointer;font-family:inherit;text-align:left;transition:.15s}
+  .tsz:hover{border-color:#e9a9ae}
+  .tsz.on{border-color:var(--red);background:#fff0f0;box-shadow:0 10px 20px -12px rgba(217,35,50,.5)}
+  .tsz i{width:22px;height:34px;border-radius:7px;background:var(--c);box-shadow:0 0 0 1px #ddd;margin-bottom:4px}
+  .tsz b{font-size:14px}.tsz small{color:var(--muted);font-size:11px;line-height:1.3}.tsz span{color:var(--red);font-weight:700;font-size:13px}
+  .txt-in{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font:500 14px Poppins,sans-serif;background:#fff;resize:vertical}
+  .txt-in:focus{outline:2px solid var(--red);outline-offset:1px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+  .swatches .sw{transition:transform .15s}.swatches .sw:hover{transform:scale(1.1)}
+  .adjust-off{opacity:.45;pointer-events:none}
+  @media(max-width:560px){.tsz-grid{grid-template-columns:1fr}.tsz{flex-direction:row;align-items:center;gap:10px}.tsz i{margin:0}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "./js/vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+<header class="site">
+  <div class="container nav">
+    <a href="index.html" class="brand"><span class="logo">J&amp;J</span><span>Craft &amp; Print Studio<small>Las Piñas</small></span></a>
+    <div class="nav-links">
+      <a class="link" href="index.html">Home</a>
+      <a class="link active" href="order.html">Order</a>
+      <a class="cart-pill" href="order.html?type=product&open=cart">🛒 <span>Your order</span> <b data-cart-count>0</b></a>
+    </div>
+  </div>
+</header>
+
+<main class="container ed">
+  <a class="back" href="products.html">← Back to products</a>
+  <div class="ed-grid">
+    <section class="viewport" id="viewport" aria-label="3D tumbler preview">
+      <div class="vp-hint" id="hint">Drag to rotate · scroll to zoom</div>
+      <div class="vp-tools">
+        <button class="vp-btn" id="spin" aria-pressed="false">⟳ Auto-rotate</button>
+        <button class="vp-btn" id="reset">⌂ Reset view</button>
+      </div>
+      <div class="vp-load" id="loading">Loading 3D…</div>
+    </section>
+
+    <aside class="panel">
+      <h1>Design your tumbler</h1>
+      <p class="sub">Choose a size, add a photo and your own text, then see it in 3D.</p>
+
+      <div class="ed-sec">
+        <div class="ed-h"><span class="ed-num">1</span><h3>Size <small id="sizeName"></small></h3></div>
+        <div class="tsz-grid" id="sizes"></div>
+      </div>
+
+      <div class="ed-sec">
+        <div class="ed-h"><span class="ed-num">2</span><h3>Photo <small>(optional)</small></h3></div>
+        <label class="drop" id="drop" for="file">
+          <input type="file" id="file" class="sr" accept="image/png,image/jpeg,image/webp">
+          <span class="drop-ic">📷</span><strong>Tap to upload</strong><span>or drop a photo here</span>
+          <small>JPG, PNG or WebP · up to 10 MB</small>
+        </label>
+        <div class="picked" id="picked" hidden>
+          <img id="pimg" alt="">
+          <div><b id="pname">photo.jpg</b><small id="pdim"></small></div>
+          <label class="linkbtn" for="file">Change</label>
+          <button class="linkbtn" id="removePhoto" type="button">Remove</button>
+        </div>
+        <div id="adjust" class="adjust-off" style="margin-top:12px">
+          <div class="rng"><label for="zoom">Zoom</label><input type="range" id="zoom" min="0.5" max="3" step="0.01" value="1"></div>
+          <div class="rng"><label for="px">Left / Right</label><input type="range" id="px" min="-1" max="1" step="0.01" value="0"></div>
+          <div class="rng"><label for="py">Down / Up</label><input type="range" id="py" min="-1" max="1" step="0.01" value="0"></div>
+        </div>
+      </div>
+
+      <div class="ed-sec">
+        <div class="ed-h"><span class="ed-num">3</span><h3>Text <small>(optional)</small></h3></div>
+        <textarea class="txt-in" id="txt" rows="2" maxlength="60" placeholder="e.g. Maria's Tumbler"></textarea>
+        <div class="row2">
+          <select class="txt-in" id="font" aria-label="Font"></select>
+          <div class="swatches" id="tcolors" role="radiogroup" aria-label="Text color"></div>
+        </div>
+        <div class="rng"><label for="tsize">Text size</label><input type="range" id="tsize" min="0.06" max="0.34" step="0.005" value="0.14"></div>
+        <div class="rng"><label for="ty">Down / Up</label><input type="range" id="ty" min="-1" max="1" step="0.01" value="0"></div>
+      </div>
+
+      <div class="ed-foot">
+        <div><div class="price" id="price">₱390</div><small class="muted">Sample price · includes print</small></div>
+        <button class="btn btn-primary btn-lg" id="add" disabled>Add to order</button>
+      </div>
+      <p class="muted center" id="addHint">Add a photo or some text to continue.</p>
+    </aside>
+  </div>
+</main>
+
+<script src="js/cart.js"></script>
+<script type="module" src="js/tumbler3d.js"></script>
+</body>
+</html>
