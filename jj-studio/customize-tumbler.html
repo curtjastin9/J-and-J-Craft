@@ -16,6 +16,7 @@
   .tsz.on{border-color:var(--red);background:#fff0f0;box-shadow:0 10px 20px -12px rgba(217,35,50,.5)}
   .tsz i{width:22px;height:34px;border-radius:7px;background:var(--c);box-shadow:0 0 0 1px #ddd;margin-bottom:4px}
   .tsz b{font-size:14px}.tsz small{color:var(--muted);font-size:11px;line-height:1.3}.tsz span{color:var(--red);font-weight:700;font-size:13px}
+  .specs{margin:10px 0 0;padding:8px 12px;border-radius:12px;background:var(--cream);line-height:1.5}
   .txt-in{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:12px;font:500 14px Poppins,sans-serif;background:#fff;resize:vertical}
   .txt-in:focus{outline:2px solid var(--red);outline-offset:1px}
   .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
@@ -45,6 +46,7 @@
     <section class="viewport" id="viewport" aria-label="3D tumbler preview">
       <div class="vp-hint" id="hint">Drag to rotate · scroll to zoom</div>
       <div class="vp-tools">
+        <button class="vp-btn" id="compare" aria-pressed="false">▥ Compare sizes</button>
         <button class="vp-btn" id="spin" aria-pressed="false">⟳ Auto-rotate</button>
         <button class="vp-btn" id="reset">⌂ Reset view</button>
       </div>
@@ -58,6 +60,7 @@
       <div class="ed-sec">
         <div class="ed-h"><span class="ed-num">1</span><h3>Size <small id="sizeName"></small></h3></div>
         <div class="tsz-grid" id="sizes"></div>
+        <p class="muted specs" id="specs"></p>
       </div>
 
       <div class="ed-sec">
