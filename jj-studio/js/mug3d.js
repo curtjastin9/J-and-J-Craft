@@ -16,6 +16,22 @@ const PRINT_H = 1.5, TEX_W = 2048;
 const $ = s => document.querySelector(s);
 const viewport = $('#viewport');
 
+/* ---------- Procedural micro-texture helper (glaze orange-peel, table grain) ---------- */
+function noiseTexture(size, mid, amp, repeatX, repeatY, blur = 0.6) {
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const g = c.getContext('2d'), img = g.createImageData(size, size);
+  for (let i = 0; i < size * size; i++) {
+    const v = Math.max(0, Math.min(255, mid + (Math.random() - 0.5) * 2 * amp));
+    img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  if (blur > 0) { g.filter = `blur(${blur}px)`; g.drawImage(c, 0, 0); g.filter = 'none'; }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(repeatX, repeatY);
+  t.anisotropy = 8;
+  return t;
+}
+
 /* ---------- Renderer / scene ---------- */
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -30,13 +46,13 @@ scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnviron
 const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
 camera.position.set(...SIDES.front.cam);
 
-// Studio lighting: warm key, cool rim, soft fill
-const key = new THREE.DirectionalLight(0xfff4e6, 1.3); key.position.set(3.5, 6, 4); key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 5;
+// Studio lighting: soft warm key, cool rim, gentle fill and sky/ground bounce
+const key = new THREE.DirectionalLight(0xfff1de, 1.25); key.position.set(3.5, 6, 4); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 6;
 Object.assign(key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 18 }); scene.add(key);
-const rim = new THREE.DirectionalLight(0xdfe8ff, 0.7); rim.position.set(-5, 3, -4); scene.add(rim);
-const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-4, 2, 5); scene.add(fill);
-scene.add(new THREE.AmbientLight(0xffffff, 0.3));
+const rim = new THREE.DirectionalLight(0xdfe8ff, 0.55); rim.position.set(-5, 3, -4); scene.add(rim);
+const fill = new THREE.DirectionalLight(0xffffff, 0.3); fill.position.set(-4, 2, 5); scene.add(fill);
+scene.add(new THREE.HemisphereLight(0xffffff, 0xd8d2c4, 0.35));
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08;
@@ -52,14 +68,17 @@ const arc = (cx, cy, r, a0, a1, n) => Array.from({ length: n + 1 }, (_, i) => {
   return V2(cx + r * Math.cos(a), cy + r * Math.sin(a));
 });
 
-// Cross-section of the body, spun around the vertical axis:
-// recessed base with a foot ring, rounded bottom edge, straight wall, rounded rim, glazed inside.
-const MUG_PROFILE = [
-  V2(0, -0.965), V2(0.6, -0.965), V2(0.66, -0.975), V2(0.7, -1),      // underside recess
-  ...arc(0.9, -0.9, 0.1, -90, 0, 8),                                   // foot ring -> rounded bottom edge
-  ...arc(0.945, 0.945, 0.055, 0, 180, 12),                             // outer wall -> rounded rim
-  ...arc(0.79, -0.8, 0.1, 0, -90, 8),                                  // inner wall -> inner floor edge
-  V2(0.4, -0.9), V2(0, -0.9)                                           // inner floor
+// Unglazed foot: the raw, matte ceramic ring a real mug sits on
+const FOOT_PROFILE = [
+  V2(0, -0.965), V2(0.6, -0.965), V2(0.66, -0.975), V2(0.7, -1),     // underside recess
+  ...arc(0.9, -0.9, 0.1, -90, -60, 4)                                   // foot ring
+];
+// Glazed body: rounded bottom edge, straight wall, rounded rim, glazed inside
+const BODY_PROFILE = [
+  ...arc(0.9, -0.9, 0.1, -60, 0, 6),                                    // rounded bottom edge
+  ...arc(0.945, 0.945, 0.055, 0, 180, 12),                              // outer wall -> rounded rim
+  ...arc(0.79, -0.8, 0.1, 0, -90, 8),                                   // inner wall -> inner floor edge
+  V2(0.4, -0.9), V2(0, -0.9)                                            // inner floor
 ];
 
 // Handle: same centre line as the hand model (so fingers grip it exactly), with flared ends that blend into the wall.
@@ -81,7 +100,7 @@ function buildHandleGeometry() {
   }
   for (let i = 0; i < SEG; i++) for (let j = 0; j < RAD; j++) {
     const a = i * (RAD + 1) + j, b = a + RAD + 1;
-    idx.push(a, b, a + 1, b, b + 1, a + 1);
+    idx.push(a, a + 1, b, b, a + 1, b + 1);          // outward-facing winding (the old order faced inward, which made the handle look harsh black/white)
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
@@ -91,43 +110,65 @@ function buildHandleGeometry() {
   return g;
 }
 
-// Glazed ceramic: smooth base glaze plus a thin glossy clear coat
+// Glazed ceramic: smooth glaze with tiny surface variation, plus a glossy clear coat
+const glazeBump = noiseTexture(256, 128, 40, 10, 3, 0.8);
+const glazeRough = noiseTexture(256, 205, 28, 6, 2, 1.5);
 const bodyMat = new THREE.MeshPhysicalMaterial({
-  color: 0xffffff, roughness: 0.16, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05,
-  ior: 1.5, specularIntensity: 1, envMapIntensity: 0.7, side: THREE.DoubleSide
+  color: 0xffffff, roughness: 0.2, roughnessMap: glazeRough, bumpMap: glazeBump, bumpScale: 0.012, metalness: 0,
+  clearcoat: 0.85, clearcoatRoughness: 0.06, ior: 1.5, specularIntensity: 0.9, envMapIntensity: 0.6, side: THREE.DoubleSide
+});
+
+// Handle: always glossy white ceramic, independent of the mug color
+const handleMat = new THREE.MeshPhysicalMaterial({
+  color: 0xf6f4ef, roughness: 0.2, roughnessMap: glazeRough, bumpMap: glazeBump, bumpScale: 0.012, metalness: 0,
+  clearcoat: 0.85, clearcoatRoughness: 0.06, ior: 1.5, specularIntensity: 0.9, envMapIntensity: 0.6, side: THREE.DoubleSide
+});
+
+// Raw ceramic foot ring
+const footMat = new THREE.MeshStandardMaterial({
+  color: 0xe8dfd0, roughness: 0.92, metalness: 0, bumpMap: noiseTexture(128, 128, 90, 12, 2, 0.3), bumpScale: 0.03, side: THREE.DoubleSide
 });
 
 const mug = new THREE.Group(); scene.add(mug);
-mug.add(new THREE.Mesh(new THREE.LatheGeometry(MUG_PROFILE, 160), bodyMat));
-mug.add(new THREE.Mesh(buildHandleGeometry(), bodyMat));
+mug.add(new THREE.Mesh(new THREE.LatheGeometry(BODY_PROFILE, 160), bodyMat));
+mug.add(new THREE.Mesh(new THREE.LatheGeometry(FOOT_PROFILE, 160), footMat));
+mug.add(new THREE.Mesh(buildHandleGeometry(), handleMat));
 
-// Coffee with a lighter crema ring
+// Coffee with crema ring, tiny bubbles near the wall and a soft meniscus
 function coffeeTexture() {
-  const c = document.createElement('canvas'); c.width = c.height = 256;
-  const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-  gr.addColorStop(0, '#4a2c1a'); gr.addColorStop(0.7, '#3a2316'); gr.addColorStop(0.92, '#6b4328'); gr.addColorStop(1, '#2b1a10');
-  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  const S = 512, c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2);
+  gr.addColorStop(0, '#3b2214'); gr.addColorStop(0.6, '#33200f'); gr.addColorStop(0.9, '#55361e'); gr.addColorStop(1, '#241509');
+  g.fillStyle = gr; g.fillRect(0, 0, S, S);
+  for (let i = 0; i < 420; i++) {                      // bubbles gathered around the edge
+    const a = Math.random() * Math.PI * 2, d = S * (0.36 + Math.random() * 0.12), r = 1 + Math.random() * 3.2;
+    g.fillStyle = `rgba(160,110,70,${0.12 + Math.random() * 0.2})`;
+    g.beginPath(); g.arc(S / 2 + Math.cos(a) * d, S / 2 + Math.sin(a) * d, r, 0, 7); g.fill();
+  }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 }
 const coffee = new THREE.Mesh(
   new THREE.CircleGeometry(0.885, 96),
-  new THREE.MeshPhysicalMaterial({ map: coffeeTexture(), roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04 })
+  new THREE.MeshPhysicalMaterial({ map: coffeeTexture(), roughness: 0.08, clearcoat: 1, clearcoatRoughness: 0.03, envMapIntensity: 0.9 })
 );
 coffee.rotation.x = -Math.PI / 2; coffee.position.y = 0.62; mug.add(coffee);
 
 mug.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = o !== coffee; } });
 
-// Table: matte surface that catches the real shadows and fades into the background
-const table = new THREE.Mesh(new THREE.CircleGeometry(14, 64), new THREE.MeshStandardMaterial({ color: 0xDDDCD4, roughness: 0.85 }));
+// Table: matte surface with fine grain that catches the real shadows and fades into the background
+const tableMat = new THREE.MeshStandardMaterial({
+  color: 0xDDDCD4, roughness: 0.88, bumpMap: noiseTexture(256, 128, 60, 40, 40, 0.6), bumpScale: 0.25
+});
+const table = new THREE.Mesh(new THREE.CircleGeometry(14, 64), tableMat);
 table.rotation.x = -Math.PI / 2; table.position.y = -1.004; table.receiveShadow = true; scene.add(table);
 
-// Soft contact shadow right under the mug so it sits on the table instead of floating
+// Soft contact shadow right under the mug (tight dark core + wide soft falloff) so it sits on the table
 function contactShadow() {
   const c = document.createElement('canvas'); c.width = c.height = 256;
-  const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 20, 128, 128, 128);
-  gr.addColorStop(0, 'rgba(0,0,0,.45)'); gr.addColorStop(0.55, 'rgba(0,0,0,.18)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 30, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(0,0,0,.55)'); gr.addColorStop(0.35, 'rgba(0,0,0,.28)'); gr.addColorStop(0.7, 'rgba(0,0,0,.08)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
   g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 4.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
   m.rotation.x = -Math.PI / 2; m.position.set(0.35, -1.0, 0); return m;
 }
 scene.add(contactShadow());
@@ -140,7 +181,7 @@ const cur = () => SIDES[state.side];
 
 function makePrintMat() {
   return new THREE.MeshPhysicalMaterial({
-    transparent: true, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.6,
+    transparent: true, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 0.55,
     polygonOffset: true, polygonOffsetFactor: -2
   });
 }
@@ -181,7 +222,7 @@ function paint(S) {
 /* ---------- Mug colors (only the colors the admin has enabled can be picked) ---------- */
 function setColor(name) {
   const hex = MugColors.ALL.find(c => c[0] === name)[1];
-  bodyMat.color.set(hex); state.colorName = name; $('#colorName').textContent = name;
+  bodyMat.color.set(hex); state.colorName = name; $('#colorName').textContent = name;   // body only: the handle stays black
   document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.name === name));
 }
 
@@ -278,7 +319,7 @@ $('#add').onclick = () => {
   const hasBack = !!SIDES.back.img;
   const ok = Cart.add({
     key: 'mug-custom-' + Date.now(), id: 'mug-custom', name: 'Custom Photo Mug',
-    detail: `${hasBack ? 'Front + Back' : 'Front only'} · ${state.colorName}`, price: CUSTOM_PRICE, art: 'mug', bg: 'bg-red',
+    detail: `${hasBack ? 'Front + Back' : 'Front only'} · ${state.colorName} · White handle`, price: CUSTOM_PRICE, art: 'mug', bg: 'bg-red',
     preview: snapshot(), design: toJPEG(SIDES.front.canvas, 1000, 0.78), designBack: hasBack ? toJPEG(SIDES.back.canvas, 1000, 0.78) : null
   }, 1);
   if (!ok) return toast('Could not save. Browser storage is full.');
