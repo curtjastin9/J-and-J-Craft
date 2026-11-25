@@ -100,30 +100,31 @@ body.noscroll{overflow:hidden}
 .qty button:hover{background:var(--red);color:#fff}
 .qty span{min-width:48px;text-align:center;font-weight:700}
 
-/* preview */
+/* preview: ONE page per row, scroll down for the next page */
 .pv-card{padding:18px}
 .pv-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
 .pv-tools{display:flex;align-items:center;gap:10px}
 .pv-expand{display:inline-flex;align-items:center;gap:6px;border:0;background:var(--ink);color:#fff;border-radius:999px;padding:7px 13px;font:600 12px Poppins,sans-serif;cursor:pointer;transition:.15s}
 .pv-expand:hover{background:var(--red);transform:translateY(-1px)}
-.pv-body{height:400px;overflow:auto;border-radius:16px;background:linear-gradient(180deg,#f4ecee,#efe5e7);padding:12px;scrollbar-width:thin}
+.pv-body{height:520px;overflow-y:auto;overflow-x:hidden;border-radius:16px;background:linear-gradient(180deg,#f4ecee,#efe5e7);padding:14px;scrollbar-width:thin;scroll-snap-type:y proximity}
 .pv-empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;color:var(--muted);font-size:13px;padding:20px}
 .pv-empty span{font-size:42px;opacity:.55}
 .pv-empty p{margin:0;max-width:22ch}
-.pv-pages{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.pv-pg{margin:0;cursor:zoom-in;outline:none;transition:transform .15s,opacity .2s;border-radius:6px}
+.pv-pages{display:flex;flex-direction:column;gap:18px;align-items:center}
+.pv-pg{margin:0;width:100%;max-width:420px;cursor:zoom-in;outline:none;transition:transform .15s,opacity .2s;border-radius:6px;scroll-snap-align:start}
 .pv-pg:hover,.pv-pg:focus-visible{transform:translateY(-3px)}
 .pv-pg:focus-visible .pv-sheet{box-shadow:0 0 0 3px var(--red)}
 .pv-pg.off{opacity:.3;filter:grayscale(1)}
-.pv-sheet{position:relative;width:100%;background:#fff;border-radius:4px;box-shadow:0 6px 16px -6px rgba(41,35,41,.35);overflow:hidden}
-.pv-sheet canvas{display:block;width:100%;height:100%}
-.pv-pg figcaption{text-align:center;font-size:11px;font-weight:600;color:var(--muted);margin-top:6px}
-.pv-pg:hover .pv-sheet::after{content:"⤢";position:absolute;right:6px;top:6px;width:24px;height:24px;border-radius:8px;background:rgba(41,35,41,.78);color:#fff;display:grid;place-items:center;font-size:14px}
+.pv-sheet{position:relative;width:100%;background:#fff;border-radius:4px;box-shadow:0 8px 22px -8px rgba(41,35,41,.4);overflow:hidden}
+.pv-sheet canvas{display:block;width:100%;height:auto}
+.pv-pg figcaption{text-align:center;font-size:12px;font-weight:600;color:var(--muted);margin-top:8px}
+.pv-pg:hover .pv-sheet::after{content:"⤢  Click to enlarge";position:absolute;right:8px;top:8px;padding:5px 10px;border-radius:8px;background:rgba(41,35,41,.82);color:#fff;font-size:12px;font-weight:600}
+.pv-more{text-align:center;font-size:12px;color:var(--muted);margin:0}
 .sk{background:linear-gradient(100deg,#fff 30%,#f6eaec 50%,#fff 70%);background-size:220% 100%;animation:shim 1.2s linear infinite}
 @keyframes shim{from{background-position:120% 0}to{background-position:-120% 0}}
 .pv-docx{cursor:zoom-in;overflow:hidden}
 .pv-docx .docx-wrapper{background:transparent!important;padding:0!important}
-.pv-docx section.docx{box-shadow:0 6px 16px -6px rgba(41,35,41,.35)!important;margin:0 auto 12px!important}
+.pv-docx section.docx{box-shadow:0 6px 16px -6px rgba(41,35,41,.35)!important;margin:0 auto 14px!important}
 .pv-tip{margin:10px 2px 0;font-size:12px;color:var(--muted);text-align:center}
 .busy .pv-body{opacity:.7}
 
@@ -145,7 +146,7 @@ body.noscroll{overflow:hidden}
 .pt td{padding:10px 12px;border-top:1px solid var(--line)}
 
 /* ===== enlarge viewer ===== */
-.viewer{position:fixed;inset:0;z-index:1000;background:rgba(22,18,22,.92);backdrop-filter:blur(6px);display:flex;flex-direction:column;animation:vwIn .18s ease}
+.viewer{position:fixed;inset:0;z-index:1000;background:rgba(22,18,22,.94);backdrop-filter:blur(6px);display:flex;flex-direction:column;animation:vwIn .18s ease}
 @keyframes vwIn{from{opacity:0}to{opacity:1}}
 .vw-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;color:#fff;flex-wrap:wrap}
 .vw-l,.vw-r{display:flex;align-items:center;gap:8px}
@@ -160,7 +161,7 @@ body.noscroll{overflow:hidden}
 .vw-badge.yes{background:#1f9d62;color:#fff}
 .vw-badge.no{background:#6b6166;color:#fff}
 .vw-body{flex:1;overflow:auto;display:flex;padding:8px 20px 28px;cursor:default}
-.vw-body canvas{margin:auto;display:block;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5);border-radius:4px;max-width:none}
+.vw-body canvas{margin:0 auto;display:block;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5);border-radius:4px;max-width:none;flex:none}
 .vw-docx{margin:0 auto;color:#000}
 .vw-docx .docx-wrapper{background:transparent!important;padding:0!important}
 .vw-err{margin:auto;color:#fff}
@@ -176,7 +177,7 @@ body.noscroll{overflow:hidden}
 @media (max-width:900px){
   .pr-grid{grid-template-columns:1fr}
   .pr-side{position:static}
-  .pv-body{height:340px}
+  .pv-body{height:460px}
 }
 @media (max-width:560px){
   .pr{padding-top:22px}

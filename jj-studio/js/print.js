@@ -139,7 +139,7 @@
     const page = await S.pdf.getPage(n);
     if (token !== S.token) return;
     const vp0 = page.getViewport({ scale: 1 });
-    const vp = page.getViewport({ scale: (300 * Math.min(window.devicePixelRatio || 1, 2)) / vp0.width });
+    const vp = page.getViewport({ scale: (560 * Math.min(window.devicePixelRatio || 1, 2)) / vp0.width });
     const c = document.createElement('canvas'); c.width = Math.floor(vp.width); c.height = Math.floor(vp.height);
     await page.render({ canvasContext: c.getContext('2d'), viewport: vp }).promise;
     if (token !== S.token) return;
@@ -231,6 +231,7 @@
         await V.task.promise;
         if (t !== V.token) return;
         body.replaceChildren(c);
+        body.scrollTop = V.toEnd ? body.scrollHeight : 0; V.toEnd = false;
       } else if (S.ext === 'docx' && S.buf) {
         $('#vwTitle').textContent = 'Word document';
         $('#vwPrev').hidden = $('#vwNext').hidden = true; $('#vwBadge').hidden = true;
@@ -269,6 +270,22 @@
   $('#vwIn').onclick = () => setZoom(V.zoom + 0.25);
   $('#vwOut').onclick = () => setZoom(V.zoom - 0.25);
   $('#vwFit').onclick = () => setZoom(1);
+  // Mouse wheel: scroll down = next page, scroll up = previous page (down to page 1).
+  // When zoomed in, the wheel scrolls the page first and flips only once the edge is reached.
+  let wheelLock = 0;
+  $('#vwBody').addEventListener('wheel', e => {
+    if (!V.open || !S.pdf || S.ext !== 'pdf') return;
+    e.preventDefault();
+    if (e.ctrlKey) { setZoom(V.zoom + (e.deltaY < 0 ? 0.25 : -0.25)); return; }
+    const b = e.currentTarget, dir = e.deltaY > 0 ? 1 : -1;
+    const atEdge = dir > 0 ? b.scrollTop + b.clientHeight >= b.scrollHeight - 2 : b.scrollTop <= 2;
+    if (!atEdge) { b.scrollTop += e.deltaY; return; }
+    const now = Date.now();
+    if (now - wheelLock < 450 || Math.abs(e.deltaY) < 4) return;
+    wheelLock = now;
+    if (dir < 0 && V.n > 1) V.toEnd = true;
+    goPage(dir);
+  }, { passive: false });
   $('#vwBody').addEventListener('click', e => { if (e.target === $('#vwBody')) closeViewer(); });
   $('#pvExpand').onclick = () => openViewer(1);
   $('#pvPages').addEventListener('click', e => { const f = e.target.closest('.pv-pg'); if (f) openViewer(+f.dataset.n); });
