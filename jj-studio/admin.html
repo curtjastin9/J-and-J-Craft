@@ -4,15 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Admin – Print Prices</title>
+<title>Admin – Prices and Mug Colors</title>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="css/print.css">
+<link rel="stylesheet" href="css/mug.css">
 </head>
 <body>
 <header class="site"><div class="container nav">
-  <a href="index.html" class="brand"><span class="logo">J&amp;J</span><span>Admin<small>Print prices</small></span></a>
-  <div class="nav-links"><a class="link" href="print.html">View print page</a><button class="btn btn-ghost btn-sm" id="logout" type="button" hidden>Log out</button></div>
+  <a href="index.html" class="brand"><span class="logo">J&amp;J</span><span>Admin<small>Prices and mug colors</small></span></a>
+  <div class="nav-links"><a class="link" href="print.html">View print page</a><a class="link" href="customize-mug.html">View mug page</a><button class="btn btn-ghost btn-sm" id="logout" type="button" hidden>Log out</button></div>
 </div></header>
 
 <main class="container">
@@ -33,11 +34,12 @@
       <button class="btn btn-ghost btn-lg" id="reset" type="button">Reset to default</button>
       <span class="ad-ok" id="ok" hidden>Saved ✓</span>
     </div>
-    <p class="muted">Temporary setup: prices and the password are saved in this browser only, so other devices will not see your changes. When the PHP/MySQL back end is added, this page will save to the database with a real login.</p>
+    <p class="muted">Temporary setup: prices, mug colors and the password are saved in this browser only, so other devices will not see your changes. When the PHP/MySQL back end is added, this page will save to the database with a real login.</p>
   </section>
 </main>
 
 <script src="js/prices.js"></script>
+<script src="js/mugcolors.js"></script>
 <script src="js/admin.js"></script>
 </body>
 </html>

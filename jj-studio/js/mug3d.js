@@ -1,15 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
-import { createHands, createSteam } from './hands.js';
+import { createHands, createSteam, HANDLE_POINTS, HANDLE_R } from './hands.js';
 
 /* ---------- Settings (sample values: the owner will set real ones later) ---------- */
 const CUSTOM_PRICE = 250;
 const MAX_MB = 10;
-const COLORS = [
-  ['White', '#FFFFFF'], ['Red', '#E4262C'], ['Yellow', '#FFC72C'], ['Pink', '#F58FB0'],
-  ['Blue', '#2F6FDE'], ['Green', '#2E9B5B'], ['Black', '#2A2A2E']
-];
 const SIDES = {
   front: { label: 'Front', start: THREE.MathUtils.degToRad(-70), arc: THREE.MathUtils.degToRad(140), cam: [0, 0.9, 5.8] },
   back:  { label: 'Back',  start: THREE.MathUtils.degToRad(110), arc: THREE.MathUtils.degToRad(140), cam: [0, 0.9, -5.8] }   // opposite of the front, handle sits between
@@ -34,11 +30,13 @@ scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnviron
 const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 60);
 camera.position.set(...SIDES.front.cam);
 
+// Studio lighting: warm key, cool rim, soft fill
 const key = new THREE.DirectionalLight(0xfff4e6, 1.3); key.position.set(3.5, 6, 4); key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02; key.shadow.radius = 5;
 Object.assign(key.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 1, far: 18 }); scene.add(key);
-const rim = new THREE.DirectionalLight(0xdfe8ff, 0.6); rim.position.set(-5, 3, -4); scene.add(rim);
-scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const rim = new THREE.DirectionalLight(0xdfe8ff, 0.7); rim.position.set(-5, 3, -4); scene.add(rim);
+const fill = new THREE.DirectionalLight(0xffffff, 0.35); fill.position.set(-4, 2, 5); scene.add(fill);
+scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08;
@@ -48,41 +46,101 @@ controls.target.set(0.25, 0, 0);
 controls.autoRotateSpeed = 2;
 
 /* ---------- Mug model ---------- */
-const mug = new THREE.Group(); scene.add(mug);
-const bodyMat = new THREE.MeshPhysicalMaterial({
-  color: 0xffffff, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.08, side: THREE.DoubleSide, envMapIntensity: 0.6
+const V2 = (x, y) => new THREE.Vector2(x, y);
+const arc = (cx, cy, r, a0, a1, n) => Array.from({ length: n + 1 }, (_, i) => {
+  const a = THREE.MathUtils.degToRad(a0 + (a1 - a0) * i / n);
+  return V2(cx + r * Math.cos(a), cy + r * Math.sin(a));
 });
 
-// Body: a profile spun around the vertical axis (gives a real wall thickness and rounded rim)
-const profile = [[0,-1],[0.88,-1],[0.96,-0.97],[0.995,-0.9],[1,-0.8],[1,0.96],[0.985,0.995],[0.94,1],[0.9,0.99],[0.89,0.94],[0.89,-0.86],[0,-0.86]]
-  .map(([x, y]) => new THREE.Vector2(x, y));
-mug.add(new THREE.Mesh(new THREE.LatheGeometry(profile, 128), bodyMat));
+// Cross-section of the body, spun around the vertical axis:
+// recessed base with a foot ring, rounded bottom edge, straight wall, rounded rim, glazed inside.
+const MUG_PROFILE = [
+  V2(0, -0.965), V2(0.6, -0.965), V2(0.66, -0.975), V2(0.7, -1),      // underside recess
+  ...arc(0.9, -0.9, 0.1, -90, 0, 8),                                   // foot ring -> rounded bottom edge
+  ...arc(0.945, 0.945, 0.055, 0, 180, 12),                             // outer wall -> rounded rim
+  ...arc(0.79, -0.8, 0.1, 0, -90, 8),                                  // inner wall -> inner floor edge
+  V2(0.4, -0.9), V2(0, -0.9)                                           // inner floor
+];
 
-// Handle on the +X side
-const handleCurve = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(0.95, 0.62, 0), new THREE.Vector3(1.38, 0.66, 0), new THREE.Vector3(1.66, 0.3, 0),
-  new THREE.Vector3(1.66, -0.3, 0), new THREE.Vector3(1.38, -0.62, 0), new THREE.Vector3(0.95, -0.58, 0)
-]);
-mug.add(new THREE.Mesh(new THREE.TubeGeometry(handleCurve, 64, 0.115, 20, false), bodyMat));
+// Handle: same centre line as the hand model (so fingers grip it exactly), with flared ends that blend into the wall.
+function buildHandleGeometry() {
+  const curve = new THREE.CatmullRomCurve3(HANDLE_POINTS.map(p => new THREE.Vector3(...p)));
+  const SEG = 120, RAD = 28, frames = curve.computeFrenetFrames(SEG, false);
+  const flare = t => { const e = Math.min(t, 1 - t), k = 1 - THREE.MathUtils.smoothstep(e, 0, 0.1); return k * k; };
+  const pos = [], nor = [], uv = [], idx = [];
 
-// Coffee inside the mug
-const coffee = new THREE.Mesh(new THREE.CircleGeometry(0.885, 64), new THREE.MeshPhysicalMaterial({ color: 0x3A2316, roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.05 }));
+  for (let i = 0; i <= SEG; i++) {
+    const t = i / SEG, p = curve.getPointAt(t), r = HANDLE_R * (1 + 0.55 * flare(t));
+    for (let j = 0; j <= RAD; j++) {
+      const a = j / RAD * Math.PI * 2;
+      const n = frames.normals[i].clone().multiplyScalar(Math.cos(a)).addScaledVector(frames.binormals[i], Math.sin(a));
+      pos.push(p.x + r * n.x, p.y + r * n.y, p.z + r * n.z);
+      nor.push(n.x, n.y, n.z);
+      uv.push(t, j / RAD);
+    }
+  }
+  for (let i = 0; i < SEG; i++) for (let j = 0; j < RAD; j++) {
+    const a = i * (RAD + 1) + j, b = a + RAD + 1;
+    idx.push(a, b, a + 1, b, b + 1, a + 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  return g;
+}
+
+// Glazed ceramic: smooth base glaze plus a thin glossy clear coat
+const bodyMat = new THREE.MeshPhysicalMaterial({
+  color: 0xffffff, roughness: 0.16, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.05,
+  ior: 1.5, specularIntensity: 1, envMapIntensity: 0.7, side: THREE.DoubleSide
+});
+
+const mug = new THREE.Group(); scene.add(mug);
+mug.add(new THREE.Mesh(new THREE.LatheGeometry(MUG_PROFILE, 160), bodyMat));
+mug.add(new THREE.Mesh(buildHandleGeometry(), bodyMat));
+
+// Coffee with a lighter crema ring
+function coffeeTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+  gr.addColorStop(0, '#4a2c1a'); gr.addColorStop(0.7, '#3a2316'); gr.addColorStop(0.92, '#6b4328'); gr.addColorStop(1, '#2b1a10');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const coffee = new THREE.Mesh(
+  new THREE.CircleGeometry(0.885, 96),
+  new THREE.MeshPhysicalMaterial({ map: coffeeTexture(), roughness: 0.1, clearcoat: 1, clearcoatRoughness: 0.04 })
+);
 coffee.rotation.x = -Math.PI / 2; coffee.position.y = 0.62; mug.add(coffee);
-mug.traverse(o => { if (o.isMesh) o.castShadow = true; });
+
+mug.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = o !== coffee; } });
 
 // Table: matte surface that catches the real shadows and fades into the background
 const table = new THREE.Mesh(new THREE.CircleGeometry(14, 64), new THREE.MeshStandardMaterial({ color: 0xDDDCD4, roughness: 0.85 }));
 table.rotation.x = -Math.PI / 2; table.position.y = -1.004; table.receiveShadow = true; scene.add(table);
 
+// Soft contact shadow right under the mug so it sits on the table instead of floating
+function contactShadow() {
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d'), gr = g.createRadialGradient(128, 128, 20, 128, 128, 128);
+  gr.addColorStop(0, 'rgba(0,0,0,.45)'); gr.addColorStop(0.55, 'rgba(0,0,0,.18)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 4.4), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.position.set(0.35, -1.0, 0); return m;
+}
+scene.add(contactShadow());
+
 const hands = createHands(scene), steam = createSteam(scene);
 
 /* ---------- Photo layers (one canvas per side, painted onto a curved strip of the mug) ---------- */
-const state = { side: 'front', colorName: 'White' };
+const state = { side: 'front', colorName: MugColors.ALWAYS };
 const cur = () => SIDES[state.side];
 
 function makePrintMat() {
   return new THREE.MeshPhysicalMaterial({
-    transparent: true, roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: 0.6,
+    transparent: true, roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.08, envMapIntensity: 0.6,
     polygonOffset: true, polygonOffsetFactor: -2
   });
 }
@@ -120,15 +178,28 @@ function paint(S) {
   S.tex.needsUpdate = true;
 }
 
-/* ---------- UI wiring ---------- */
-function setColor(name, hex) {
+/* ---------- Mug colors (only the colors the admin has enabled can be picked) ---------- */
+function setColor(name) {
+  const hex = MugColors.ALL.find(c => c[0] === name)[1];
   bodyMat.color.set(hex); state.colorName = name; $('#colorName').textContent = name;
   document.querySelectorAll('.sw').forEach(b => b.classList.toggle('on', b.dataset.name === name));
 }
-$('#swatches').innerHTML = COLORS.map(([n, h]) =>
-  `<button class="sw ${n === 'White' ? 'on' : ''}" data-name="${n}" data-hex="${h}" style="--c:${h}" aria-label="${n}" title="${n}"></button>`).join('');
-document.querySelectorAll('.sw').forEach(b => b.onclick = () => setColor(b.dataset.name, b.dataset.hex));
 
+function renderSwatches() {
+  if (!MugColors.isEnabled(state.colorName)) setColor(MugColors.ALWAYS);   // admin switched the chosen color off
+  $('#swatches').innerHTML = MugColors.ALL.map(([name, hex]) => {
+    const ok = MugColors.isEnabled(name);
+    return `<button type="button" class="sw ${name === state.colorName ? 'on' : ''}" data-name="${name}" style="--c:${hex}"
+      aria-label="${name}${ok ? '' : ' (not available)'}" title="${ok ? name : name + ' · not available yet'}" ${ok ? '' : 'disabled'}></button>`;
+  }).join('');
+  document.querySelectorAll('.sw:not(:disabled)').forEach(b => b.onclick = () => setColor(b.dataset.name));
+  const locked = MugColors.ALL.some(([name]) => !MugColors.isEnabled(name));
+  $('#colorNote').textContent = locked ? 'Other colors are not available yet. The shop will turn them on when they are in stock.' : '';
+}
+renderSwatches();
+window.addEventListener('storage', e => { if (e.key === MugColors.KEY) renderSwatches(); });   // admin changed it in another tab
+
+/* ---------- UI wiring ---------- */
 let tween = null;
 function goTo(pos) { tween = new THREE.Vector3(...pos); }
 
@@ -203,6 +274,7 @@ function snapshot() {                                  // square preview from th
 }
 $('#add').onclick = () => {
   if (!SIDES.front.img) return;
+  if (!MugColors.isEnabled(state.colorName)) renderSwatches();       // never order a color that was switched off
   const hasBack = !!SIDES.back.img;
   const ok = Cart.add({
     key: 'mug-custom-' + Date.now(), id: 'mug-custom', name: 'Custom Photo Mug',
