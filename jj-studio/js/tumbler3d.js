@@ -2,17 +2,12 @@ import * as THREE from 'three';
 import { OrbitControls } from './vendor/OrbitControls.js';
 import { RoomEnvironment } from './vendor/RoomEnvironment.js';
 
-/* =====================================================================
-   1. PRODUCT SPECS
-   Every size is a REAL measurement in centimetres.
-   The 3D scene uses 1 unit = 10 cm (see CM), so a 26 cm bottle is 2.6 units tall.
-   To match your own stock, only edit the numbers in PRODUCTS.
-   ===================================================================== */
+/* ===== 1. PRODUCT SPECS (real cm; 1 scene unit = 10 cm) ===== */
 const CM = 0.1;
-const ARC = THREE.MathUtils.degToRad(120);   // how far the print wraps around the bottle
-const TEX_W = 2048;                          // print texture width (pixels)
+const ARC = THREE.MathUtils.degToRad(120);
+const TEX_W = 2048;
 const MAX_MB = 10;
-const COMPARE_ORDER = ['m', 'l', 's'];       // left to right, same as the shop photo
+const COMPARE_ORDER = ['m', 'l', 's'];
 
 const PRODUCTS = {
   s: {
@@ -20,7 +15,7 @@ const PRODUCTS = {
     swatch: 'linear-gradient(#1f8392,#0e5a56)',
     diameter: 7.4, bodyHeight: 21.5, shoulderHeight: 3.2, neckRatio: 0.82, cornerRadius: 1.0,
     capHeight: 5.6, loopHeight: 0,
-    print: [4.0, 17.5],                                       // print area from the bottom, cm
+    print: [4.0, 17.5],
     finish: { roughness: 0.55, clearcoat: 0.25, bump: 0.15 },
     gradient: { bottom: '#0e5a56', top: '#1f8392', from: 0.05, to: 0.9 },
     colors: { collar: '#1f7f8c', lid: '#161618' }
@@ -55,18 +50,36 @@ const FONTS = [
   ['Script', s => `400 ${s}px "Brush Script MT", "Segoe Script", cursive`],
   ['Impact', s => `400 ${s}px Impact, "Arial Narrow", sans-serif`]
 ];
-const TEXT_COLORS = ['#ffffff', '#292329', '#d92332', '#ffd36a', '#2f6fde', '#2e9b5b', '#f58fb0'];
 
-/* =====================================================================
-   2. STATE + SMALL HELPERS
-   ===================================================================== */
+/* Colour palette used for BOTH text colour and tumbler colour.
+   One colour = solid. Two or more = gradient (like Canva). Edit freely. */
+const PALETTE = [
+  { n: 'White', c: ['#ffffff'] }, { n: 'Black', c: ['#1a1a1a'] }, { n: 'Silver', c: ['#b8bcc4'] },
+  { n: 'Red', c: ['#d92332'] }, { n: 'Orange', c: ['#ff7a1a'] }, { n: 'Yellow', c: ['#ffd36a'] },
+  { n: 'Gold', c: ['#d4a72c'] }, { n: 'Green', c: ['#2e9b5b'] }, { n: 'Teal', c: ['#1f8392'] },
+  { n: 'Blue', c: ['#2f6fde'] }, { n: 'Navy', c: ['#1b2a5c'] }, { n: 'Purple', c: ['#7d4fb5'] },
+  { n: 'Pink', c: ['#f58fb0'] }, { n: 'Hot Pink', c: ['#e6399b'] }, { n: 'Beige', c: ['#e8d8bf'] },
+  { n: 'Brown', c: ['#6b4226'] },
+  { n: 'Sunset', c: ['#ff5f6d', '#ffc371'] }, { n: 'Fire', c: ['#f12711', '#f5af19'] },
+  { n: 'Gold Shine', c: ['#f7971e', '#ffd200'] }, { n: 'Ocean', c: ['#2193b0', '#6dd5ed'] },
+  { n: 'Aurora', c: ['#00c6ff', '#0072ff'] }, { n: 'Mint', c: ['#00b09b', '#96c93d'] },
+  { n: 'Purple Haze', c: ['#7f00ff', '#e100ff'] }, { n: 'Berry', c: ['#8e2de2', '#4a00e0'] },
+  { n: 'Blush', c: ['#ee9ca7', '#ffdde1'] }, { n: 'Peach', c: ['#ffecd2', '#fcb69f'] },
+  { n: 'Candy', c: ['#ff9a9e', '#fad0c4', '#a18cd1'] }, { n: 'Rose Gold', c: ['#b76e79', '#f4c4b0', '#b76e79'] },
+  { n: 'Rainbow', c: ['#ff0000', '#ffd000', '#2ecc71', '#3498db', '#9b59b6'] }, { n: 'Midnight', c: ['#232526', '#5a5f66'] }
+];
+
+/* ===== 2. STATE + HELPERS ===== */
 const $ = selector => document.querySelector(selector);
 const viewport = $('#viewport');
 
 const state = {
   size: 'm', compare: false,
   img: null, zoom: 1, px: 0, py: 0,
-  text: '', font: 0, color: '#ffffff', textSize: 0.14, textY: 0
+  mode: 'both',            // 'photo' | 'text' | 'both'
+  orient: 'h',             // 'h' horizontal | 'v' vertical
+  text: '', font: 0, fill: 0, textSize: 0.14, textY: 0,
+  bodyIdx: -1              // -1 = original tumbler colour, otherwise index in PALETTE
 };
 
 const V2 = (x, y) => new THREE.Vector2(x, y);
@@ -75,14 +88,12 @@ const totalHeight = p => p.bodyHeight + p.capHeight + p.loopHeight;
 const outerRadius = p => p.diameter / 2 + (p.boot ? 0.45 : 0);
 const printSize = p => ({ w: (p.diameter / 2) * ARC, h: p.print[1] - p.print[0] });
 
-let layer = null;               // print layer of the currently selected bottle
-let stageGroup = null;          // everything that is currently shown (one bottle or all three)
+let layer = null;
+let stageGroup = null;
 let frontCam = new THREE.Vector3();
 let camTween = null;
 
-/* =====================================================================
-   3. RENDERER, SCENE, LIGHTS, TABLE
-   ===================================================================== */
+/* ===== 3. RENDERER, SCENE, LIGHTS, TABLE ===== */
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -128,7 +139,6 @@ controls.maxDistance = 16;
 controls.minPolarAngle = 0.3;
 controls.maxPolarAngle = Math.PI * 0.55;
 
-/** Grey noise texture used for fine surface grain (powder coat, frosted plastic, table). */
 function noiseTexture(size, mid, amp, repeatX, repeatY) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
@@ -146,7 +156,6 @@ function noiseTexture(size, mid, amp, repeatX, repeatY) {
   return tex;
 }
 
-/** Vertical grip ribs (used on lid collars and the silicone boot). */
 function ribTexture(repeatX) {
   const canvas = document.createElement('canvas');
   canvas.width = 64; canvas.height = 4;
@@ -175,7 +184,6 @@ table.position.y = -0.002;
 table.receiveShadow = true;
 scene.add(table);
 
-/** Soft dark spot under a bottle so it sits on the table. */
 const contactShadowTex = (() => {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = 256;
@@ -190,9 +198,7 @@ const contactShadowTex = (() => {
   return new THREE.CanvasTexture(canvas);
 })();
 
-/* =====================================================================
-   4. BOTTLE PARTS (all measurements in cm)
-   ===================================================================== */
+/* ===== 4. BOTTLE PARTS ===== */
 function latheMesh(points, material, segments = 112) {
   return new THREE.Mesh(new THREE.LatheGeometry(points, segments), material);
 }
@@ -203,18 +209,18 @@ function physical(color, roughness, clearcoat, extra = {}) {
   });
 }
 
-/** Body: flat base with a recess, straight wall, rounded shoulder, narrow neck. Colour (or ombré) is baked into vertex colours. */
-function buildBody(p) {
+/** Body. `custom` = this is the selected bottle, so the chosen palette colour/gradient may override the original. */
+function buildBody(p, custom) {
   const r = p.diameter / 2, H = p.bodyHeight, rc = p.cornerRadius;
   const rNeck = r * p.neckRatio, wallTop = H - p.shoulderHeight;
 
   const profile = [V2(0, 0.3), V2(r - rc - 0.5, 0.3), V2(r - rc - 0.4, 0), V2(r - rc, 0)];
-  for (let i = 1; i <= 8; i++) {                                    // rounded bottom edge
+  for (let i = 1; i <= 8; i++) {
     const a = -Math.PI / 2 + (i / 8) * Math.PI / 2;
     profile.push(V2(r - rc + rc * Math.cos(a), rc + rc * Math.sin(a)));
   }
-  profile.push(V2(r, wallTop));                                     // straight wall
-  for (let i = 1; i <= 16; i++) {                                   // shoulder curving in to the neck
+  profile.push(V2(r, wallTop));
+  for (let i = 1; i <= 16; i++) {
     const t = i / 16;
     profile.push(V2(r + (rNeck - r) * smooth(t), wallTop + (H - 0.15 - wallTop) * t));
   }
@@ -225,9 +231,17 @@ function buildBody(p) {
   const colors = new Float32Array(pos.count * 3);
   const base = new THREE.Color(p.bodyColor || '#ffffff');
   const grad = p.gradient && { bottom: new THREE.Color(p.gradient.bottom), top: new THREE.Color(p.gradient.top) };
+  const ov = custom && state.bodyIdx >= 0 ? PALETTE[state.bodyIdx].c.map(c => new THREE.Color(c)) : null;
   const tmp = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
-    if (grad) tmp.copy(grad.bottom).lerp(grad.top, THREE.MathUtils.smoothstep(pos.getY(i) / H, p.gradient.from, p.gradient.to));
+    const t = pos.getY(i) / H;
+    if (ov) {
+      if (ov.length === 1) tmp.copy(ov[0]);
+      else {
+        const u = (1 - THREE.MathUtils.smoothstep(t, 0.05, 0.9)) * (ov.length - 1), k = Math.min(Math.floor(u), ov.length - 2);
+        tmp.copy(ov[k]).lerp(ov[k + 1], u - k);
+      }
+    } else if (grad) tmp.copy(grad.bottom).lerp(grad.top, THREE.MathUtils.smoothstep(t, p.gradient.from, p.gradient.to));
     else tmp.copy(base);
     colors.set([tmp.r, tmp.g, tmp.b], i * 3);
   }
@@ -239,7 +253,6 @@ function buildBody(p) {
   return new THREE.Mesh(geometry, material);
 }
 
-/** Silicone boot at the bottom of the large tumbler. */
 function buildBoot(p) {
   const r = p.diameter / 2, { height, color } = p.boot;
   const profile = [V2(r - 0.2, 0), V2(r + 0.3, 0.08), V2(r + 0.45, 0.6), V2(r + 0.45, height - 0.4), V2(r + 0.33, height), V2(r + 0.02, height + 0.1)];
@@ -247,14 +260,12 @@ function buildBoot(p) {
   return latheMesh(profile, material);
 }
 
-/** U-shaped carry loop standing on the lid. */
 function buildLoop(width, height, tubeRadius, material) {
   const pts = [[-width, 0], [-width * 1.05, height * 0.45], [-width * 0.62, height * 0.93], [width * 0.62, height * 0.93], [width * 1.05, height * 0.45], [width, 0]]
     .map(([x, y]) => new THREE.Vector3(x, y, 0));
   return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 72, tubeRadius, 16), material);
 }
 
-/** Lid for the insulated (coral) and large (purple) tumblers: ribbed collar, domed cap, carry loop. */
 function buildScrewLid(p, rNeck) {
   const group = new THREE.Group();
   const R = rNeck * 1.08, cap = p.capHeight;
@@ -264,10 +275,10 @@ function buildScrewLid(p, rNeck) {
   const darkMat = physical(0x1b1b1d, 0.5, 0.2);
 
   group.add(latheMesh([V2(R - 0.05, 0), V2(R, 0.1), V2(R, cap - 0.7), V2(R - 0.15, cap - 0.35), V2(R - 0.6, cap - 0.08), V2(rNeck * 0.45, cap), V2(0, cap)], lidMat));
-  group.add(latheMesh([V2(R + 0.04, 0.12), V2(R + 0.04, cap * 0.55)], collarMat));           // grip band
-  group.add(latheMesh([V2(rNeck, -0.3), V2(rNeck, 0.1)], darkMat));                          // thin seam between lid and body
+  group.add(latheMesh([V2(R + 0.04, 0.12), V2(R + 0.04, cap * 0.55)], collarMat));
+  group.add(latheMesh([V2(rNeck, -0.3), V2(rNeck, 0.1)], darkMat));
 
-  if (p.kind === 'large') {                                                                  // drinking spout with small holes
+  if (p.kind === 'large') {
     const spout = new THREE.Mesh(new THREE.CylinderGeometry(rNeck * 0.5, rNeck * 0.55, 0.7, 48), lidMat);
     spout.position.y = cap + 0.3;
     group.add(spout);
@@ -284,7 +295,7 @@ function buildScrewLid(p, rNeck) {
   const loop = buildLoop(loopW, p.loopHeight + 0.3, tube, handleMat);
   loop.position.y = cap - 0.3;
   group.add(loop);
-  for (const side of [-1, 1]) {                                                              // loop mounting blocks
+  for (const side of [-1, 1]) {
     const block = new THREE.Mesh(new THREE.BoxGeometry(tube * 2.6, 0.5, tube * 3), handleMat);
     block.position.set(side * loopW, cap - 0.1, 0);
     group.add(block);
@@ -292,7 +303,6 @@ function buildScrewLid(p, rNeck) {
   return group;
 }
 
-/** Lid for the sport bottle: teal collar, black body, flip hood, latch, hinge and strap loop. */
 function buildSportLid(p, rNeck) {
   const group = new THREE.Group();
   const R = rNeck * 1.08;
@@ -310,18 +320,17 @@ function buildSportLid(p, rNeck) {
     group.add(mesh);
     return mesh;
   };
-  add(new THREE.BoxGeometry(rNeck * 0.7, 0.9, 0.5), 0, 3.35, rNeck * 1.02);                 // front latch
-  add(new THREE.BoxGeometry(rNeck * 0.5, 0.35, 0.8), 0, 4.95, rNeck * 0.95, 0.12);          // thumb tab
-  add(new THREE.BoxGeometry(rNeck * 0.6, 1.5, 0.5), 0, 3.8, -rNeck * 1.0);                  // hinge block
+  add(new THREE.BoxGeometry(rNeck * 0.7, 0.9, 0.5), 0, 3.35, rNeck * 1.02);
+  add(new THREE.BoxGeometry(rNeck * 0.5, 0.35, 0.8), 0, 4.95, rNeck * 0.95, 0.12);
+  add(new THREE.BoxGeometry(rNeck * 0.6, 1.5, 0.5), 0, 3.8, -rNeck * 1.0);
 
-  const strap = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.16, 14, 40), blackMat);       // side strap loop
+  const strap = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.16, 14, 40), blackMat);
   strap.position.set(-R - 0.55, 1.8, 0);
   strap.rotation.y = Math.PI / 2;
   group.add(strap);
   return group;
 }
 
-/** Transparent canvas layer wrapped around the front of the bottle (customer photo + text). */
 function createPrintLayer(p) {
   const r = p.diameter / 2, [y0, y1] = p.print, h = y1 - y0;
   const canvas = document.createElement('canvas');
@@ -339,12 +348,11 @@ function createPrintLayer(p) {
   return { canvas, ctx: canvas.getContext('2d'), tex, mesh };
 }
 
-/** One complete bottle, built in cm and scaled to scene units. */
 function buildBottle(key, withPrint) {
   const p = PRODUCTS[key], r = p.diameter / 2, rNeck = r * p.neckRatio;
   const group = new THREE.Group();
 
-  group.add(buildBody(p));
+  group.add(buildBody(p, key === state.size));
   if (p.boot) group.add(buildBoot(p));
 
   const lid = p.kind === 'sport' ? buildSportLid(p, rNeck) : buildScrewLid(p, rNeck);
@@ -369,9 +377,7 @@ function buildBottle(key, withPrint) {
   return { group, layer: printLayer, width: outerRadius(p) * 2, height: totalHeight(p) };
 }
 
-/* =====================================================================
-   5. STAGE: show one bottle, or all three side by side to compare sizes
-   ===================================================================== */
+/* ===== 5. STAGE ===== */
 function clearStage() {
   if (!stageGroup) return;
   scene.remove(stageGroup);
@@ -392,7 +398,7 @@ function frameCamera(widthCm, heightCm) {
 function showBottles() {
   clearStage();
   const keys = state.compare ? COMPARE_ORDER : [state.size];
-  const gap = 3;                                                           // cm between bottles
+  const gap = 3;
   const bottles = keys.map(k => buildBottle(k, k === state.size));
   const totalWidth = bottles.reduce((sum, b) => sum + b.width, 0) + gap * (bottles.length - 1);
 
@@ -411,61 +417,104 @@ function showBottles() {
   updateUI();
 }
 
-/* =====================================================================
-   6. PAINT THE PHOTO + TEXT ONTO THE PRINT LAYER
-   ===================================================================== */
+/* ===== 6. PAINT PHOTO + TEXT ===== */
+const usePhoto = () => state.mode !== 'text';
+const useText = () => state.mode !== 'photo';
+const isReady = () => {
+  const t = state.text.trim();
+  return state.mode === 'photo' ? !!state.img : state.mode === 'text' ? !!t : !!(state.img && t);
+};
+
+function fillFor(ctx, w, h) {
+  const c = PALETTE[state.fill].c;
+  if (c.length === 1) return c[0];
+  const g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+  c.forEach((col, i) => g.addColorStop(i / (c.length - 1), col));
+  return g;
+}
+
+function drawPhoto(ctx, b) {
+  const img = state.img, k = Math.max(b.w / img.width, b.h / img.height) * state.zoom;
+  const w = img.width * k, h = img.height * k;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(b.x, b.y, b.w, b.h); ctx.clip();
+  ctx.drawImage(img, b.x + (b.w - w) / 2 + state.px * b.w / 2, b.y + (b.h - h) / 2 - state.py * b.h / 2, w, h);
+  ctx.restore();
+}
+
+function drawPlaceholder(ctx, b, label, H) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.fillRect(b.x, b.y, b.w, b.h);
+  ctx.strokeStyle = 'rgba(43,27,23,.45)';
+  ctx.lineWidth = H * 0.012;
+  ctx.setLineDash([H * 0.04, H * 0.03]);
+  const m = H * 0.04;
+  ctx.strokeRect(b.x + m, b.y + m, b.w - m * 2, b.h - m * 2);
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(43,27,23,.7)';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${Math.min(H * 0.07, b.h * 0.2)}px Poppins, Arial, sans-serif`;
+  ctx.fillText(label, b.x + b.w / 2, b.y + b.h / 2);
+  ctx.restore();
+}
+
+function drawText(ctx, b, H) {
+  const lines = state.text.trim().split('\n').slice(0, 3), vert = state.orient === 'v';
+  const along = (vert ? b.h : b.w) * 0.9, across = (vert ? b.w : b.h) * 0.88;
+  let size = H * state.textSize;
+  ctx.font = FONTS[state.font][1](size);
+  let widest = Math.max(...lines.map(l => ctx.measureText(l).width)) || 1;
+  size *= Math.min(1, along / widest, across / (lines.length * size * 1.15));   // shrink to fit
+  ctx.font = FONTS[state.font][1](size);
+  widest = Math.max(...lines.map(l => ctx.measureText(l).width)) || 1;
+  const lh = size * 1.15, total = lines.length * lh;
+
+  ctx.save();
+  ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+  if (vert) ctx.rotate(Math.PI / 2);                                           // reads top to bottom
+  ctx.translate(0, -state.textY * (vert ? b.w : b.h) * 0.4);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = fillFor(ctx, widest, total);
+  ctx.shadowColor = 'rgba(0,0,0,.3)';
+  ctx.shadowBlur = size * 0.07;
+  ctx.shadowOffsetY = size * 0.03;
+  lines.forEach((line, i) => ctx.fillText(line, 0, -(lines.length - 1) * lh / 2 + i * lh));
+  ctx.restore();
+}
+
 function paint() {
   if (!layer) return;
   const { canvas, ctx, tex } = layer, W = canvas.width, H = canvas.height, text = state.text.trim();
   ctx.clearRect(0, 0, W, H);
 
-  if (state.img) {
-    const k = Math.max(W / state.img.width, H / state.img.height) * state.zoom;
-    const w = state.img.width * k, h = state.img.height * k;
-    ctx.drawImage(state.img, (W - w) / 2 + state.px * W / 2, (H - h) / 2 - state.py * H / 2, w, h);
-  } else if (!text) {
-    ctx.fillStyle = 'rgba(255,255,255,.5)';
-    ctx.fillRect(0, 0, W, H);
-    ctx.strokeStyle = 'rgba(43,27,23,.45)';
-    ctx.lineWidth = H * 0.012;
-    ctx.setLineDash([H * 0.04, H * 0.03]);
-    ctx.strokeRect(H * 0.04, H * 0.04, W - H * 0.08, H * 0.92);
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(43,27,23,.7)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.font = `700 ${H * 0.085}px Poppins, Arial, sans-serif`;
-    ctx.fillText('Your photo or text here', W / 2, H / 2);
+  let photoBox = { x: 0, y: 0, w: W, h: H }, textBox = { x: 0, y: 0, w: W, h: H };
+  if (state.mode === 'both') {                                                 // text goes BELOW the photo
+    const band = Math.round(H * (state.orient === 'v' ? 0.45 : 0.3));
+    photoBox = { x: 0, y: 0, w: W, h: H - band };
+    textBox = { x: 0, y: H - band, w: W, h: band };
   }
 
-  if (text) {
-    const lines = text.split('\n').slice(0, 3);
-    let size = H * state.textSize;
-    ctx.font = FONTS[state.font][1](size);
-    const widest = Math.max(...lines.map(line => ctx.measureText(line).width));
-    if (widest > W * 0.88) size *= (W * 0.88) / widest;                    // shrink long text to fit
-    ctx.font = FONTS[state.font][1](size);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = state.color;
-    ctx.shadowColor = 'rgba(0,0,0,.35)';
-    ctx.shadowBlur = size * 0.08;
-    ctx.shadowOffsetY = size * 0.03;
-    const lineHeight = size * 1.15;
-    const top = H / 2 - state.textY * H * 0.4 - (lines.length - 1) * lineHeight / 2;
-    lines.forEach((line, i) => ctx.fillText(line, W / 2, top + i * lineHeight));
-    ctx.shadowColor = 'transparent';
+  if (usePhoto()) {
+    if (state.img) drawPhoto(ctx, photoBox);
+    else drawPlaceholder(ctx, photoBox, 'Your photo here', H);
+  }
+  if (useText()) {
+    if (text) drawText(ctx, textBox, H);
+    else if (state.mode === 'text') drawPlaceholder(ctx, textBox, 'Your text here', H);
   }
 
   tex.needsUpdate = true;
-  const hasDesign = !!(state.img || text);
-  $('#add').disabled = !hasDesign;
-  $('#addHint').textContent = hasDesign ? 'Looks good? Add it to your order.' : 'Add a photo or some text to continue.';
+  const ready = isReady();
+  $('#add').disabled = !ready;
+  $('#addHint').textContent = ready ? 'Looks good? Add it to your order.'
+    : state.mode === 'photo' ? 'Upload a photo to continue.'
+    : state.mode === 'text' ? 'Type some text to continue.'
+    : !state.img && !text ? 'Add a photo and some text to continue.'
+    : !state.img ? 'Upload a photo to continue.' : 'Type some text to continue.';
 }
 
-/* =====================================================================
-   7. INTERFACE
-   ===================================================================== */
+/* ===== 7. INTERFACE ===== */
 const fmt = n => (Math.round(n * 10) / 10).toFixed(1);
 
 function updateUI() {
@@ -484,13 +533,52 @@ $('#sizes').innerHTML = Object.entries(PRODUCTS).map(([key, p]) => `
 document.querySelectorAll('.tsz').forEach(b => b.onclick = () => { state.size = b.dataset.k; showBottles(); });
 
 $('#font').innerHTML = FONTS.map((f, i) => `<option value="${i}">${f[0]}</option>`).join('');
-$('#tcolors').innerHTML = TEXT_COLORS.map(c =>
-  `<button type="button" class="sw ${c === state.color ? 'on' : ''}" data-c="${c}" style="--c:${c}" aria-label="Text color ${c}"></button>`).join('');
-document.querySelectorAll('#tcolors .sw').forEach(b => b.onclick = () => {
-  state.color = b.dataset.c;
-  document.querySelectorAll('#tcolors .sw').forEach(x => x.classList.toggle('on', x === b));
+
+/* colour swatches: text colour + tumbler colour */
+const tile = c => c.length === 1 ? c[0] : `linear-gradient(135deg,${c.join(',')})`;
+const swHTML = (i, on) => `<button type="button" class="sw ${on ? 'on' : ''}" data-i="${i}" style="--c:${tile(PALETTE[i].c)}" title="${PALETTE[i].n}" aria-label="${PALETTE[i].n}"></button>`;
+function renderPalettes() {
+  $('#tcolors').innerHTML = PALETTE.map((_, i) => swHTML(i, i === state.fill)).join('');
+  $('#bcolors').innerHTML = `<button type="button" class="sw orig ${state.bodyIdx < 0 ? 'on' : ''}" data-i="-1">Original</button>` +
+    PALETTE.map((_, i) => swHTML(i, i === state.bodyIdx)).join('');
+  $('#fillName').textContent = PALETTE[state.fill].n;
+  $('#bcName').textContent = state.bodyIdx < 0 ? 'Original' : PALETTE[state.bodyIdx].n;
+}
+$('#tcolors').onclick = e => {
+  const b = e.target.closest('.sw'); if (!b) return;
+  state.fill = +b.dataset.i; renderPalettes(); paint();
+};
+$('#bcolors').onclick = e => {
+  const b = e.target.closest('.sw'); if (!b) return;
+  state.bodyIdx = +b.dataset.i; renderPalettes(); showBottles();
+};
+renderPalettes();
+
+/* design type: photo / text / both */
+function applyMode() {
+  document.querySelectorAll('[data-mode]').forEach(b => {
+    const on = b.dataset.mode === state.mode;
+    b.classList.toggle('on', on); b.setAttribute('aria-checked', on);
+  });
+  $('#photoSec').hidden = state.mode === 'text';
+  $('#textSec').hidden = state.mode === 'photo';
+  $('#modeHint').textContent = state.mode === 'both' ? 'The text is placed below the photo.'
+    : state.mode === 'photo' ? 'Only your photo is printed.' : 'Only your text is printed.';
   paint();
-});
+}
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { state.mode = b.dataset.mode; applyMode(); });
+
+/* text direction: horizontal / vertical */
+function applyOrient() {
+  document.querySelectorAll('[data-o]').forEach(b => {
+    const on = b.dataset.o === state.orient;
+    b.classList.toggle('on', on); b.setAttribute('aria-checked', on);
+  });
+  $('#tyLabel').textContent = state.orient === 'v' ? 'Left / Right' : 'Down / Up';
+  paint();
+}
+document.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { state.orient = b.dataset.o; applyOrient(); });
+applyMode(); applyOrient();
 
 $('#txt').addEventListener('input', e => { state.text = e.target.value; paint(); });
 $('#font').addEventListener('change', e => { state.font = +e.target.value; paint(); });
@@ -522,7 +610,7 @@ function setCompare(on) {
   showBottles();
 }
 
-/* ---------- photo upload ---------- */
+/* photo upload */
 function loadFile(file) {
   if (!file) return;
   if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) return toast('Please choose a JPG, PNG or WebP image');
@@ -556,7 +644,7 @@ const dropZone = $('#drop');
 ['dragleave', 'drop'].forEach(ev => dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('over'); }));
 dropZone.addEventListener('drop', e => loadFile(e.dataTransfer.files[0]));
 
-/* ---------- add to order ---------- */
+/* add to order */
 function toJPEG(source, maxWidth, quality) {
   const k = Math.min(1, maxWidth / source.width);
   const canvas = document.createElement('canvas');
@@ -569,7 +657,7 @@ function toJPEG(source, maxWidth, quality) {
   return canvas.toDataURL('image/jpeg', quality);
 }
 
-function snapshot() {                                                      // square preview from the front
+function snapshot() {
   const keep = camera.position.clone();
   camera.position.copy(frontCam);
   controls.update();
@@ -584,13 +672,17 @@ function snapshot() {                                                      // sq
 }
 
 $('#add').onclick = () => {
+  if (!isReady()) return;
   const p = PRODUCTS[state.size], text = state.text.trim();
-  if (!state.img && !text) return;
-  setCompare(false);                                                       // preview must show the single bottle
-  const parts = [state.img && 'Photo', text && `Text “${text.replace(/\n/g, ' ')}”`].filter(Boolean).join(' + ');
+  setCompare(false);
+  const parts = [
+    usePhoto() && 'Photo',
+    useText() && `Text “${text.replace(/\n/g, ' ')}” (${state.orient === 'v' ? 'vertical' : 'horizontal'}, ${PALETTE[state.fill].n})`
+  ].filter(Boolean).join(' + ');
+  const bodyName = state.bodyIdx >= 0 ? PALETTE[state.bodyIdx].n : p.colorName;
   const saved = Cart.add({
     key: 'tumbler-' + Date.now(), id: 'tumbler-custom', name: 'Custom Tumbler',
-    detail: `${p.capacity} · ${p.colorName} · ${parts}`, price: p.price, art: 'mug', bg: 'bg-pink',
+    detail: `${p.capacity} · ${bodyName} · ${parts}`, price: p.price, art: 'mug', bg: 'bg-pink',
     preview: snapshot(), design: toJPEG(layer.canvas, 1000, 0.8)
   }, 1);
   if (!saved) return toast('Could not save. Browser storage is full.');
@@ -598,9 +690,7 @@ $('#add').onclick = () => {
   setTimeout(() => location.href = 'order.html?type=product&open=cart', 450);
 };
 
-/* =====================================================================
-   8. RENDER LOOP
-   ===================================================================== */
+/* ===== 8. RENDER LOOP ===== */
 function resize() {
   const w = viewport.clientWidth, h = viewport.clientHeight;
   renderer.setSize(w, h);
