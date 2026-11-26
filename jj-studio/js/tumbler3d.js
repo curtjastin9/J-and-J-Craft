@@ -12,34 +12,34 @@ const COMPARE_ORDER = ['m', 'l', 's'];
 const PRODUCTS = {
   s: {
     name: 'Sport Bottle', capacity: '750 ml', colorName: 'Teal Green', price: 320, kind: 'sport',
-    swatch: 'linear-gradient(#1f8392,#0e5a56)',
+    swatch: 'linear-gradient(#1c7f86,#0f6063)',
     diameter: 7.4, bodyHeight: 21.5, shoulderHeight: 3.2, neckRatio: 0.82, cornerRadius: 1.0,
     capHeight: 5.6, loopHeight: 0,
     print: [4.0, 17.5],
-    finish: { roughness: 0.55, clearcoat: 0.25, bump: 0.15 },
-    gradient: { bottom: '#0e5a56', top: '#1f8392', from: 0.05, to: 0.9 },
-    colors: { collar: '#1f7f8c', lid: '#161618' }
+    finish: { roughness: 0.62, clearcoat: 0, bump: 0.1 },
+    gradient: { bottom: '#0f6063', top: '#1c7f86', from: 0.05, to: 0.9 },
+    colors: { collar: '#1f7f8c', lid: '#141416' }
   },
   m: {
-    name: 'Insulated Tumbler', capacity: '900 ml', colorName: 'Coral', price: 390, kind: 'insulated',
-    swatch: '#ef5b4f',
+    name: 'Insulated Tumbler', capacity: '900 ml', colorName: 'Coral Pink', price: 390, kind: 'insulated',
+    swatch: '#ef4f5e',
     diameter: 8.6, bodyHeight: 21.5, shoulderHeight: 3.0, neckRatio: 0.8, cornerRadius: 1.1,
-    capHeight: 3.0, loopHeight: 1.9, loopWidth: 0.62,
+    capHeight: 3.0, loopHeight: 3.4, loopWidth: 0.52,
     print: [3.5, 18.0],
-    finish: { roughness: 0.5, clearcoat: 0.12, bump: 0.35 },
-    gradient: null, bodyColor: '#ef5b4f',
-    colors: { collar: '#9ea3aa', lid: '#9ea3aa', handle: '#aeb3ba' }
+    finish: { roughness: 0.42, clearcoat: 0.22, bump: 0.12 },
+    gradient: null, bodyColor: '#ef4f5e',
+    colors: { collar: '#f2646b', lid: '#9a9ea6', handle: '#a3a7ae' }
   },
   l: {
     name: 'Large Tumbler', capacity: '1.2 L', colorName: 'Purple Ombré', price: 450, kind: 'large',
-    swatch: 'linear-gradient(#6b3fa0,#efc6e6)',
+    swatch: 'linear-gradient(#8648bf,#f0b7e8)',
     diameter: 9.4, bodyHeight: 24.0, shoulderHeight: 3.5, neckRatio: 0.78, cornerRadius: 1.2,
     capHeight: 3.0, loopHeight: 4.0, loopWidth: 0.55,
-    boot: { color: '#f3b9df', height: 4.5 },
+    boot: { color: '#f4bde8', height: 4.5 },
     print: [6.0, 20.0],
-    finish: { roughness: 0.5, clearcoat: 0.12, bump: 0.35 },
-    gradient: { bottom: '#e8b7e0', top: '#6b3fa0', from: 0.1, to: 0.62 },
-    colors: { collar: '#7d4fb5', lid: '#7d4fb5', handle: '#7d4fb5' }
+    finish: { roughness: 0.45, clearcoat: 0.2, bump: 0.12 },
+    gradient: { bottom: '#f0b7e8', top: '#8648bf', from: 0.12, to: 0.7 },
+    colors: { collar: '#8a58c4', lid: '#8a58c4', handle: '#8a58c4' }
   }
 };
 
@@ -87,6 +87,10 @@ const smooth = t => t * t * (3 - 2 * t);
 const totalHeight = p => p.bodyHeight + p.capHeight + p.loopHeight;
 const outerRadius = p => p.diameter / 2 + (p.boot ? 0.45 : 0);
 const printSize = p => ({ w: (p.diameter / 2) * ARC, h: p.print[1] - p.print[0] });
+const arcPts = (cx, cy, r, a0, a1, n) => Array.from({ length: n + 1 }, (_, i) => {
+  const a = THREE.MathUtils.degToRad(a0 + (a1 - a0) * i / n);
+  return V2(cx + r * Math.cos(a), cy + r * Math.sin(a));
+});
 
 let layer = null;
 let stageGroup = null;
@@ -98,7 +102,7 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 viewport.prepend(renderer.domElement);
@@ -120,7 +124,7 @@ keyLight.shadow.radius = 6;
 Object.assign(keyLight.shadow.camera, { left: -6, right: 6, top: 6, bottom: -4, near: 1, far: 22 });
 scene.add(keyLight);
 
-const rimLight = new THREE.DirectionalLight(0xdfe8ff, 0.6);
+const rimLight = new THREE.DirectionalLight(0xdfe8ff, 0.7);
 rimLight.position.set(-5, 4, -4);
 scene.add(rimLight);
 
@@ -156,24 +160,8 @@ function noiseTexture(size, mid, amp, repeatX, repeatY) {
   return tex;
 }
 
-function ribTexture(repeatX) {
-  const canvas = document.createElement('canvas');
-  canvas.width = 64; canvas.height = 4;
-  const ctx = canvas.getContext('2d');
-  const gradient = ctx.createLinearGradient(0, 0, 64, 0);
-  gradient.addColorStop(0, '#303030');
-  gradient.addColorStop(0.5, '#ffffff');
-  gradient.addColorStop(1, '#303030');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, 64, 4);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(repeatX, 1);
-  return tex;
-}
-
-const grainTex = noiseTexture(256, 128, 70, 14, 8);
-const ribTex = ribTexture(56);
+// Fine powder-coat / soft-touch grain
+const grainFine = noiseTexture(256, 128, 60, 36, 26);
 
 const table = new THREE.Mesh(
   new THREE.CircleGeometry(16, 64),
@@ -198,35 +186,104 @@ const contactShadowTex = (() => {
   return new THREE.CanvasTexture(canvas);
 })();
 
-/* ===== 4. BOTTLE PARTS ===== */
-function latheMesh(points, material, segments = 112) {
+/* ===== 4. MATERIALS + SHAPE HELPERS ===== */
+function latheMesh(points, material, segments = 128) {
   return new THREE.Mesh(new THREE.LatheGeometry(points, segments), material);
 }
 
+/** Glossy / satin plastic or painted metal */
 function physical(color, roughness, clearcoat, extra = {}) {
   return new THREE.MeshPhysicalMaterial({
     color, roughness, clearcoat, clearcoatRoughness: 0.35, side: THREE.DoubleSide, envMapIntensity: 0.9, ...extra
   });
 }
 
+/** Soft-touch rubber / silicone / matte plastic (fine grain + sheen) */
+function matte(color, roughness = 0.7, extra = {}) {
+  return new THREE.MeshPhysicalMaterial({
+    color, roughness, clearcoat: 0, side: THREE.DoubleSide, envMapIntensity: 0.65,
+    sheen: 0.6, sheenRoughness: 0.7, sheenColor: new THREE.Color(0x9a9a9a),
+    bumpMap: grainFine, bumpScale: 0.06, ...extra
+  });
+}
+
+/** Ribbed (fluted) grip ring with real geometry ribs, like the collars in the photos */
+function flutedBand(R, y0, y1, N, amp, material) {
+  const SEG = N * 8, pos = [], nor = [], uv = [], idx = [];
+  const rad = th => R * (1 + amp * (0.5 + 0.5 * Math.cos(N * th)));
+  for (let k = 0; k < 2; k++) {
+    const y = k ? y1 : y0;
+    for (let i = 0; i <= SEG; i++) {
+      const th = i / SEG * Math.PI * 2, e = 1e-3, r = rad(th);
+      const dr = (rad(th + e) - rad(th - e)) / (2 * e);
+      const sx = Math.sin(th), cz = Math.cos(th);
+      pos.push(r * sx, y, r * cz);
+      const nx = r * sx - dr * cz, nz = r * cz + dr * sx, l = Math.hypot(nx, nz) || 1;
+      nor.push(nx / l, 0, nz / l);
+      uv.push(i / SEG, k);
+    }
+  }
+  for (let i = 0; i < SEG; i++) {
+    const a = i, b = i + 1, c = SEG + 1 + i, d = c + 1;
+    idx.push(a, b, c, b, d, c);
+  }
+  // flat top ring so the ribs have a clean finished edge
+  const base = pos.length / 3;
+  for (let i = 0; i <= SEG; i++) {
+    const th = i / SEG * Math.PI * 2, r = rad(th), sx = Math.sin(th), cz = Math.cos(th);
+    pos.push(r * sx, y1, r * cz); nor.push(0, 1, 0); uv.push(i / SEG, 1);
+    pos.push(R * 0.75 * sx, y1, R * 0.75 * cz); nor.push(0, 1, 0); uv.push(i / SEG, 1);
+  }
+  for (let i = 0; i < SEG; i++) {
+    const a = base + i * 2, b = a + 1, c = a + 2, d = a + 3;
+    idx.push(a, c, b, c, d, b);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  return new THREE.Mesh(g, material);
+}
+
+function rrPath(P, x0, y0, w, h, r) {
+  P.moveTo(x0 + r, y0);
+  P.lineTo(x0 + w - r, y0); P.quadraticCurveTo(x0 + w, y0, x0 + w, y0 + r);
+  P.lineTo(x0 + w, y0 + h - r); P.quadraticCurveTo(x0 + w, y0 + h, x0 + w - r, y0 + h);
+  P.lineTo(x0 + r, y0 + h); P.quadraticCurveTo(x0, y0 + h, x0, y0 + h - r);
+  P.lineTo(x0, y0 + r); P.quadraticCurveTo(x0, y0, x0 + r, y0);
+}
+
+function roundedBlock(w, h, d, rad, material) {
+  const s = new THREE.Shape();
+  rrPath(s, -w / 2, -h / 2, w, h, rad);
+  const g = new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: true, bevelThickness: 0.12, bevelSize: 0.12, bevelSegments: 3, curveSegments: 8 });
+  g.translate(0, 0, -d / 2);
+  return new THREE.Mesh(g, material);
+}
+
+/* ===== 5. BOTTLE PARTS ===== */
+
 /** Body. `custom` = this is the selected bottle, so the chosen palette colour/gradient may override the original. */
 function buildBody(p, custom) {
   const r = p.diameter / 2, H = p.bodyHeight, rc = p.cornerRadius;
   const rNeck = r * p.neckRatio, wallTop = H - p.shoulderHeight;
 
-  const profile = [V2(0, 0.3), V2(r - rc - 0.5, 0.3), V2(r - rc - 0.4, 0), V2(r - rc, 0)];
-  for (let i = 1; i <= 8; i++) {
-    const a = -Math.PI / 2 + (i / 8) * Math.PI / 2;
+  // slightly recessed underside, rounded bottom edge, straight wall
+  const profile = [V2(0, 0.55), V2(r * 0.5, 0.47), V2(r - rc - 0.6, 0.3), V2(r - rc - 0.3, 0.08)];
+  for (let i = 0; i <= 10; i++) {
+    const a = -Math.PI / 2 + (i / 10) * Math.PI / 2;
     profile.push(V2(r - rc + rc * Math.cos(a), rc + rc * Math.sin(a)));
   }
-  profile.push(V2(r, wallTop));
-  for (let i = 1; i <= 16; i++) {
-    const t = i / 16;
+  profile.push(V2(r, (rc + wallTop) / 2), V2(r, wallTop));
+  // smooth S-shaped shoulder
+  for (let i = 1; i <= 28; i++) {
+    const t = i / 28;
     profile.push(V2(r + (rNeck - r) * smooth(t), wallTop + (H - 0.15 - wallTop) * t));
   }
   profile.push(V2(rNeck, H));
 
-  const geometry = new THREE.LatheGeometry(profile, 128);
+  const geometry = new THREE.LatheGeometry(profile, 160);
   const pos = geometry.attributes.position;
   const colors = new Float32Array(pos.count * 3);
   const base = new THREE.Color(p.bodyColor || '#ffffff');
@@ -234,7 +291,7 @@ function buildBody(p, custom) {
   const ov = custom && state.bodyIdx >= 0 ? PALETTE[state.bodyIdx].c.map(c => new THREE.Color(c)) : null;
   const tmp = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
-    const t = pos.getY(i) / H;
+    const y = pos.getY(i), t = y / H;
     if (ov) {
       if (ov.length === 1) tmp.copy(ov[0]);
       else {
@@ -243,90 +300,149 @@ function buildBody(p, custom) {
       }
     } else if (grad) tmp.copy(grad.bottom).lerp(grad.top, THREE.MathUtils.smoothstep(t, p.gradient.from, p.gradient.to));
     else tmp.copy(base);
+    tmp.multiplyScalar(0.8 + 0.2 * THREE.MathUtils.smoothstep(y, 0, 1.8));   // soft ambient occlusion at the base
     colors.set([tmp.r, tmp.g, tmp.b], i * 3);
   }
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
+  const sport = p.kind === 'sport';
   const material = physical(0xffffff, p.finish.roughness, p.finish.clearcoat, {
-    vertexColors: true, bumpMap: grainTex, bumpScale: p.finish.bump, clearcoatRoughness: 0.45, envMapIntensity: 0.8
+    vertexColors: true, bumpMap: grainFine, bumpScale: p.finish.bump, clearcoatRoughness: 0.5, envMapIntensity: sport ? 0.6 : 0.8,
+    sheen: sport ? 0.6 : 0.15, sheenRoughness: 0.7, sheenColor: new THREE.Color(0x9a9a9a)
   });
   return new THREE.Mesh(geometry, material);
 }
 
+/** Silicone protective boot (Large Tumbler) */
 function buildBoot(p) {
   const r = p.diameter / 2, { height, color } = p.boot;
-  const profile = [V2(r - 0.2, 0), V2(r + 0.3, 0.08), V2(r + 0.45, 0.6), V2(r + 0.45, height - 0.4), V2(r + 0.33, height), V2(r + 0.02, height + 0.1)];
-  const material = physical(color, 0.75, 0, { sheen: 1, sheenColor: new THREE.Color(0xffffff), sheenRoughness: 0.6, bumpMap: ribTex, bumpScale: 0.35 });
-  return latheMesh(profile, material);
+  const profile = [
+    V2(0, 0), V2(r, 0), V2(r + 0.28, 0.04), V2(r + 0.42, 0.25), V2(r + 0.47, 0.7),
+    V2(r + 0.47, height - 0.5),
+    ...arcPts(r + 0.3, height - 0.5, 0.17, 0, 90, 5),
+    V2(r + 0.12, height - 0.3), V2(r + 0.02, height - 0.45), V2(r - 0.06, height - 0.6)
+  ];
+  const mat = matte(color, 0.62, { bumpScale: 0.1, sheen: 0.8, sheenColor: new THREE.Color(0xffffff), envMapIntensity: 0.55 });
+  return latheMesh(profile, mat, 160);
 }
 
-function buildLoop(width, height, tubeRadius, material) {
-  const pts = [[-width, 0], [-width * 1.05, height * 0.45], [-width * 0.62, height * 0.93], [width * 0.62, height * 0.93], [width * 1.05, height * 0.45], [width, 0]]
-    .map(([x, y]) => new THREE.Vector3(x, y, 0));
-  return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 72, tubeRadius, 16), material);
-}
-
-function buildScrewLid(p, rNeck) {
+/** Large purple tumbler lid: fluted collar, domed cap, vent block, thick teardrop carry loop */
+function buildLargeLid(p, rNeck) {
   const group = new THREE.Group();
-  const R = rNeck * 1.08, cap = p.capHeight;
-  const lidMat = physical(p.colors.lid, 0.42, 0.3);
-  const collarMat = physical(p.colors.collar, 0.5, 0.15, { bumpMap: ribTex, bumpScale: 0.6 });
-  const handleMat = physical(p.colors.handle, 0.35, 0.4);
-  const darkMat = physical(0x1b1b1d, 0.5, 0.2);
+  const R = rNeck * 1.12, cap = p.capHeight;
+  const lidMat = matte(p.colors.lid, 0.52, { clearcoat: 0.18, clearcoatRoughness: 0.5 });
+  const darkMat = physical(0x19191c, 0.5, 0.1);
 
-  group.add(latheMesh([V2(R - 0.05, 0), V2(R, 0.1), V2(R, cap - 0.7), V2(R - 0.15, cap - 0.35), V2(R - 0.6, cap - 0.08), V2(rNeck * 0.45, cap), V2(0, cap)], lidMat));
-  group.add(latheMesh([V2(R + 0.04, 0.12), V2(R + 0.04, cap * 0.55)], collarMat));
-  group.add(latheMesh([V2(rNeck, -0.3), V2(rNeck, 0.1)], darkMat));
+  group.add(flutedBand(R, -0.6, 1.9, 56, 0.016, lidMat));
 
-  if (p.kind === 'large') {
-    const spout = new THREE.Mesh(new THREE.CylinderGeometry(rNeck * 0.5, rNeck * 0.55, 0.7, 48), lidMat);
-    spout.position.y = cap + 0.3;
-    group.add(spout);
-    for (const x of [-1.0, 0, 1.0]) {
-      const hole = new THREE.Mesh(new THREE.CircleGeometry(0.28, 20), darkMat);
-      hole.scale.set(1, 1.8, 1);
-      hole.rotation.x = -Math.PI / 2;
-      hole.position.set(x, cap + 0.66, 0);
-      group.add(hole);
-    }
+  const capProfile = [V2(R * 0.93, 1.85), V2(R * 0.93, 2.2), ...arcPts(R * 0.93 - 0.5, 2.2, 0.5, 0, 90, 6), V2(R * 0.5, 2.72), V2(0, 2.75)];
+  group.add(latheMesh(capProfile, lidMat));
+
+  // spout / vent block under the handle
+  const block = roundedBlock(3.4, 0.9, 2.6, 0.35, lidMat);
+  block.position.set(0, 3.1, 0);
+  group.add(block);
+  for (const x of [-0.75, 0.75]) {
+    const notch = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.34, 0.12), darkMat);
+    notch.position.set(x, 3.1, 1.38);
+    group.add(notch);
   }
 
-  const loopW = rNeck * p.loopWidth, tube = p.kind === 'large' ? 0.38 : 0.28;
-  const loop = buildLoop(loopW, p.loopHeight + 0.3, tube, handleMat);
-  loop.position.y = cap - 0.3;
+  // teardrop carry loop (thick round tube)
+  const W = rNeck * p.loopWidth, Hh = p.loopHeight - 0.35;
+  const pts = [[0, 0], [W * 0.45, Hh * 0.12], [W * 0.92, Hh * 0.5], [W * 0.7, Hh * 0.88], [0, Hh], [-W * 0.7, Hh * 0.88], [-W * 0.92, Hh * 0.5], [-W * 0.45, Hh * 0.12]]
+    .map(([x, y]) => new THREE.Vector3(x, y, 0));
+  const curve = new THREE.CatmullRomCurve3(pts, true, 'centripetal');
+  const loop = new THREE.Mesh(new THREE.TubeGeometry(curve, 140, 0.36, 18, true), lidMat);
+  loop.position.y = 3.35;
   group.add(loop);
-  for (const side of [-1, 1]) {
-    const block = new THREE.Mesh(new THREE.BoxGeometry(tube * 2.6, 0.5, tube * 3), handleMat);
-    block.position.set(side * loopW, cap - 0.1, 0);
-    group.add(block);
-  }
   return group;
 }
 
-function buildSportLid(p, rNeck) {
+/** Coral insulated bottle lid: pink fluted ring, dark gasket, grey cap, flat strap handle */
+function buildInsulatedLid(p, rNeck) {
   const group = new THREE.Group();
   const R = rNeck * 1.08;
-  const collarMat = physical(p.colors.collar, 0.45, 0.15, { bumpMap: ribTex, bumpScale: 0.6 });
-  const blackMat = physical(p.colors.lid, 0.42, 0.3);
+  const collarMat = matte(p.colors.collar, 0.5, { clearcoat: 0.15, clearcoatRoughness: 0.5 });
+  const greyMat = physical(p.colors.lid, 0.4, 0.35);
+  const handleMat = physical(p.colors.handle, 0.38, 0.4);
+  const darkMat = physical(0x1a1a1c, 0.55, 0.1);
 
-  group.add(latheMesh([V2(R, 0), V2(R, 1.5), V2(R - 0.1, 1.6), V2(rNeck * 1.02, 1.6)], collarMat));
-  group.add(latheMesh([V2(rNeck * 1.02, 1.5), V2(rNeck * 1.02, 3.0)], blackMat));
-  group.add(latheMesh([V2(rNeck * 1.0, 3.0), V2(rNeck * 1.0, 4.7), V2(rNeck * 0.92, 5.15), V2(rNeck * 0.5, 5.5), V2(0, p.capHeight)], blackMat));
+  group.add(flutedBand(R, -0.6, 1.1, 48, 0.02, collarMat));
+  group.add(latheMesh([V2(R * 0.95, 1.05), V2(R * 0.95, 1.45)], darkMat));
 
-  const add = (geometry, x, y, z, rotX = 0) => {
-    const mesh = new THREE.Mesh(geometry, blackMat);
-    mesh.position.set(x, y, z);
-    mesh.rotation.x = rotX;
-    group.add(mesh);
-    return mesh;
-  };
-  add(new THREE.BoxGeometry(rNeck * 0.7, 0.9, 0.5), 0, 3.35, rNeck * 1.02);
-  add(new THREE.BoxGeometry(rNeck * 0.5, 0.35, 0.8), 0, 4.95, rNeck * 0.95, 0.12);
-  add(new THREE.BoxGeometry(rNeck * 0.6, 1.5, 0.5), 0, 3.8, -rNeck * 1.0);
+  const capProfile = [
+    V2(R * 0.99, 1.4), V2(R * 1.03, 1.5), V2(R * 1.03, 1.95), V2(R * 0.98, 2.15), V2(R * 0.72, 2.25),
+    V2(R * 0.7, 2.4), V2(R * 0.7, 2.65), ...arcPts(R * 0.7 - 0.3, 2.65, 0.3, 0, 90, 5), V2(R * 0.3, 3.0), V2(0, 3.0)
+  ];
+  group.add(latheMesh(capProfile, greyMat));
 
-  const strap = new THREE.Mesh(new THREE.TorusGeometry(0.9, 0.16, 14, 40), blackMat);
-  strap.position.set(-R - 0.55, 1.8, 0);
-  strap.rotation.y = Math.PI / 2;
+  // flat strap handle: rounded-rectangle outline with a hole
+  const w = rNeck * 1.05, h = p.loopHeight, band = 0.78, depth = 0.95;
+  const shape = new THREE.Shape();
+  rrPath(shape, -w / 2, 0, w, h, 1.2);
+  const hole = new THREE.Path();
+  rrPath(hole, -w / 2 + band, band, w - band * 2, h - band * 1.55, 0.55);
+  shape.holes.push(hole);
+  const geo = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: true, bevelThickness: 0.16, bevelSize: 0.16, bevelSegments: 4, curveSegments: 14 });
+  geo.translate(0, 0, -depth / 2);
+  const handle = new THREE.Mesh(geo, handleMat);
+  handle.position.y = 2.85;
+  group.add(handle);
+  return group;
+}
+
+/** Teal sport bottle lid: teal collar, black flip-top with thumb tab and hinge, carry strap */
+function buildSportLid(p, rNeck) {
+  const group = new THREE.Group();
+  const R = rNeck * 1.2, Rl = rNeck * 0.98;
+  const collarMat = matte(p.colors.collar, 0.6, { bumpScale: 0.08 });
+  const blackMat = matte(p.colors.lid, 0.42, { clearcoat: 0.2, clearcoatRoughness: 0.4, sheen: 0.3 });
+  const darkMat = physical(0x0a0a0b, 0.5, 0.1);
+
+  // teal collar block (flares down to meet the shoulder)
+  const collar = [
+    V2(rNeck * 1.1, -0.9), V2(R * 0.97, -0.3), V2(R, 0.1), V2(R, 1.45),
+    ...arcPts(R - 0.35, 1.45, 0.35, 0, 90, 6), V2(Rl * 1.02, 1.8)
+  ];
+  group.add(latheMesh(collar, collarMat, 160));
+
+  // black flip-top lid with hinge seam and rounded dome
+  const lid = [
+    V2(Rl, 1.75), V2(Rl, 3.15), V2(Rl - 0.08, 3.2), V2(Rl - 0.08, 3.3), V2(Rl, 3.35), V2(Rl, 4.5),
+    ...arcPts(Rl - 0.7, 4.7, 0.7, 0, 90, 8), V2(Rl * 0.45, 5.55), V2(0, p.capHeight)
+  ];
+  group.add(latheMesh(lid, blackMat, 160));
+
+  // front thumb tab + latch ridge, rear hinge
+  const tab = roundedBlock(2.3, 0.75, 0.55, 0.28, blackMat);
+  tab.position.set(0, 3.3, Rl + 0.12);
+  group.add(tab);
+  const ridge = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.12, 0.2), darkMat);
+  ridge.position.set(0, 3.3, Rl + 0.42);
+  group.add(ridge);
+  const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 2.4, 24), blackMat);
+  hinge.rotation.z = Math.PI / 2;
+  hinge.position.set(0, 3.65, -Rl + 0.1);
+  group.add(hinge);
+  const hingeBase = roundedBlock(2.8, 1.1, 0.7, 0.3, blackMat);
+  hingeBase.position.set(0, 3.0, -Rl - 0.05);
+  group.add(hingeBase);
+
+  // small recessed button on top of the dome
+  const button = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.8, 0.12, 40), darkMat);
+  button.position.set(0, p.capHeight - 0.08, 0);
+  group.add(button);
+
+  // teal carry strap: rises from the collar on the left, then hangs down the body
+  const r = p.diameter / 2;
+  const strapPts = [[-R * 0.88, 0.8], [-R - 0.7, 1.7], [-R - 1.15, 0.6], [-r - 0.75, -1.2], [-r - 0.55, -4], [-r - 0.45, -7], [-r - 0.4, -9.2]]
+    .map(([x, y]) => new THREE.Vector3(x, y, 0));
+  const strap = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(strapPts), 80, 0.26, 12),
+    matte(p.colors.collar, 0.6, { bumpScale: 0.05 })
+  );
+  strap.scale.z = 2.2;
   group.add(strap);
   return group;
 }
@@ -355,7 +471,8 @@ function buildBottle(key, withPrint) {
   group.add(buildBody(p, key === state.size));
   if (p.boot) group.add(buildBoot(p));
 
-  const lid = p.kind === 'sport' ? buildSportLid(p, rNeck) : buildScrewLid(p, rNeck);
+  const lid = p.kind === 'sport' ? buildSportLid(p, rNeck)
+    : p.kind === 'large' ? buildLargeLid(p, rNeck) : buildInsulatedLid(p, rNeck);
   lid.position.y = p.bodyHeight;
   group.add(lid);
 
@@ -377,7 +494,7 @@ function buildBottle(key, withPrint) {
   return { group, layer: printLayer, width: outerRadius(p) * 2, height: totalHeight(p) };
 }
 
-/* ===== 5. STAGE ===== */
+/* ===== 6. STAGE ===== */
 function clearStage() {
   if (!stageGroup) return;
   scene.remove(stageGroup);
@@ -398,7 +515,7 @@ function frameCamera(widthCm, heightCm) {
 function showBottles() {
   clearStage();
   const keys = state.compare ? COMPARE_ORDER : [state.size];
-  const gap = 3;
+  const gap = 3.5;
   const bottles = keys.map(k => buildBottle(k, k === state.size));
   const totalWidth = bottles.reduce((sum, b) => sum + b.width, 0) + gap * (bottles.length - 1);
 
@@ -417,7 +534,7 @@ function showBottles() {
   updateUI();
 }
 
-/* ===== 6. PAINT PHOTO + TEXT ===== */
+/* ===== 7. PAINT PHOTO + TEXT ===== */
 const usePhoto = () => state.mode !== 'text';
 const useText = () => state.mode !== 'photo';
 const isReady = () => {
@@ -514,7 +631,7 @@ function paint() {
     : !state.img ? 'Upload a photo to continue.' : 'Type some text to continue.';
 }
 
-/* ===== 7. INTERFACE ===== */
+/* ===== 8. INTERFACE ===== */
 const fmt = n => (Math.round(n * 10) / 10).toFixed(1);
 
 function updateUI() {
@@ -690,7 +807,7 @@ $('#add').onclick = () => {
   setTimeout(() => location.href = 'order.html?type=product&open=cart', 450);
 };
 
-/* ===== 8. RENDER LOOP ===== */
+/* ===== 9. RENDER LOOP ===== */
 function resize() {
   const w = viewport.clientWidth, h = viewport.clientHeight;
   renderer.setSize(w, h);
