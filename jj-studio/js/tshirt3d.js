@@ -19,15 +19,16 @@ const SIZES = [                        // flat chest width / length in cm (overs
   { k: '2XL', chest: 70, len: 76, s: 1.12 }
 ];
 
+/* White is the default (first in the list) */
 const SHIRTS = [
-  ['Blue Gray', '#9aadac'], ['White', '#f2f2ee'], ['Black', '#222326'], ['Navy', '#1f2b4d'],
+  ['White', '#f4f4f1'], ['Blue Gray', '#9aadac'], ['Black', '#222326'], ['Navy', '#1f2b4d'],
   ['Royal Blue', '#2f5fc4'], ['Red', '#c8283a'], ['Forest Green', '#2f6b4a'], ['Pink', '#f0a7bf'],
   ['Beige', '#d9c7a8'], ['Maroon', '#6e1f2c'], ['Yellow', '#f4cf4a'], ['Gray', '#8d8f94']
 ];
 
-/* Shirt shape in cm */
-const D = { A: 31, B: 11.5, HB: 66, NA: 10.5, NB: 8.8, N: 4.2, RISE: 6.5, BACK: 2.5, FRONT: 2.5 };
-const SL = { L: 27, ang: 16 * Math.PI / 180, ry0: 12.8, ry1: 11, rz0: 9.5, rz1: 8.8, sy: D.HB - 11.8, sx: D.A - 6 };
+/* Shirt shape in cm (boxy oversized tee, narrow crew neck) */
+const D = { A: 31, B: 11.5, HB: 66, NA: 9.4, NB: 8.4, N: 4.2, RISE: 6.2, BACK: 2.5, FRONT: 2.4 };
+const SL = { L: 27, ang: 17 * Math.PI / 180, ry0: 12.8, ry1: 11.6, rz0: 9.6, rz1: 8.4, sy: D.HB - 11.8, sx: D.A - 6 };
 const PR = { w: 34, h: 38, cy: 41 };   // print area on the chest
 
 const FONTS = [
@@ -334,7 +335,7 @@ renderer.setClearColor(0x000000, 0);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
+renderer.toneMappingExposure = 1.12;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 viewport.prepend(renderer.domElement);
@@ -344,12 +345,13 @@ scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnviron
 
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 80);
 
-const key = new THREE.DirectionalLight(0xfff4e6, 2.1); key.position.set(2, 9, 10); key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0008; key.shadow.normalBias = 0.04; key.shadow.radius = 5;
+/* soft studio set-up: big front key from above, cool side fill, back rim, so folds read clearly */
+const key = new THREE.DirectionalLight(0xfff4e6, 2.3); key.position.set(3, 10, 10); key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0008; key.shadow.normalBias = 0.05; key.shadow.radius = 6;
 Object.assign(key.shadow.camera, { left: -9, right: 9, top: 9, bottom: -3, near: 1, far: 30 }); scene.add(key);
-const fill = new THREE.DirectionalLight(0xcfd8ff, 0.55); fill.position.set(-8, 3, 6); scene.add(fill);
+const fill = new THREE.DirectionalLight(0xcfd8ff, 0.7); fill.position.set(-9, 3, 6); scene.add(fill);
 const rim = new THREE.DirectionalLight(0xffffff, 0.9); rim.position.set(0, 6, -9); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x303030, 0.5));
+scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2a2a, 0.45));
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
@@ -358,20 +360,20 @@ controls.minPolarAngle = 0.35; controls.maxPolarAngle = Math.PI * 0.68;
 controls.autoRotateSpeed = 2;
 
 /* =====================================================================
-   6. FABRIC TEXTURES  (heathered cotton jersey, vertical knit ribs)
+   6. FABRIC TEXTURES  (soft heathered cotton jersey + ribbed collar)
    ===================================================================== */
 function mottleTexture() {
   const S = 512, c = document.createElement('canvas'); c.width = c.height = S;
-  const g = c.getContext('2d'); g.fillStyle = '#f0f0f0'; g.fillRect(0, 0, S, S);
+  const g = c.getContext('2d'); g.fillStyle = '#f2f2f2'; g.fillRect(0, 0, S, S);
   for (let i = 0; i < 260; i++) {
     const x = Math.random() * S, y = Math.random() * S, r = 20 + Math.random() * 60, dark = Math.random() < .5;
     const gr = g.createRadialGradient(x, y, 0, x, y, r);
-    gr.addColorStop(0, dark ? 'rgba(0,0,0,.07)' : 'rgba(255,255,255,.12)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    gr.addColorStop(0, dark ? 'rgba(0,0,0,.055)' : 'rgba(255,255,255,.12)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
     g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
   }
   for (let i = 0; i < 9000; i++) {                              // fibres
     const x = Math.random() * S, y = Math.random() * S, a = Math.random() * 6.28, l = 2 + Math.random() * 4;
-    g.strokeStyle = Math.random() < .5 ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.11)'; g.lineWidth = 1;
+    g.strokeStyle = Math.random() < .5 ? 'rgba(255,255,255,.2)' : 'rgba(0,0,0,.09)'; g.lineWidth = 1;
     g.beginPath(); g.moveTo(x, y); g.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke();
   }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace;
@@ -382,44 +384,77 @@ function knitTexture() {
   const g = c.getContext('2d'); g.fillStyle = '#808080'; g.fillRect(0, 0, S, S);
   for (let i = 0; i < 64; i++) {
     const x = i * 4, gr = g.createLinearGradient(x, 0, x + 4, 0);
-    gr.addColorStop(0, '#5a5a5a'); gr.addColorStop(.5, '#d6d6d6'); gr.addColorStop(1, '#5a5a5a');
+    gr.addColorStop(0, '#6a6a6a'); gr.addColorStop(.5, '#c8c8c8'); gr.addColorStop(1, '#6a6a6a');
     g.fillStyle = gr; g.fillRect(x, 0, 4, S);
-    g.fillStyle = 'rgba(0,0,0,.22)'; for (let y = 0; y < S; y += 6) g.fillRect(x + 1, y + (i % 2) * 3, 2, 2);
+    g.fillStyle = 'rgba(0,0,0,.18)'; for (let y = 0; y < S; y += 6) g.fillRect(x + 1, y + (i % 2) * 3, 2, 2);
   }
   const img = g.getImageData(0, 0, S, S);
   for (let i = 0; i < S * S; i++) { const n = (Math.random() - .5) * 36; for (let k = 0; k < 3; k++) img.data[i * 4 + k] = Math.max(0, Math.min(255, img.data[i * 4 + k] + n)); }
   g.putImageData(img, 0, 0);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16; return t;
 }
-function grainTexture() {
-  const S = 128, c = document.createElement('canvas'); c.width = c.height = S;
-  const g = c.getContext('2d'), img = g.createImageData(S, S);
-  for (let i = 0; i < S * S; i++) { const v = 128 + (Math.random() - .5) * 110; img.data.set([v, v, v, 255], i * 4); }
-  g.putImageData(img, 0, 0);
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
+/* 1x1 rib pattern: strong vertical ribs for the collar (bump) and a soft shading map */
+function ribTextures() {
+  const S = 128, mk = bump => {
+    const c = document.createElement('canvas'); c.width = c.height = S;
+    const g = c.getContext('2d'), n = 8, w = S / n;
+    for (let i = 0; i < n; i++) {
+      const gr = g.createLinearGradient(i * w, 0, (i + 1) * w, 0);
+      if (bump) { gr.addColorStop(0, '#2a2a2a'); gr.addColorStop(.5, '#f2f2f2'); gr.addColorStop(1, '#2a2a2a'); }
+      else { gr.addColorStop(0, '#d2d2d2'); gr.addColorStop(.5, '#ffffff'); gr.addColorStop(1, '#d2d2d2'); }
+      g.fillStyle = gr; g.fillRect(i * w, 0, w, S);
+    }
+    const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 16;
+    if (!bump) t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  };
+  return { bump: mk(true), map: mk(false) };
 }
 
 const mottle = mottleTexture(); mottle.repeat.set(0.5, 0.5);
-const knit = knitTexture(); knit.repeat.set(1, 1);
-const grain = grainTexture();
+const knit = knitTexture(); knit.repeat.set(0.12, 0.12);                  // very fine, only a hint of weave
+const hemKnit = knitTexture(); hemKnit.repeat.set(6, 1);
+const rib = ribTextures();
 
+/* body + sleeves (vertex colours add soft baked shadows in the folds and under the arms) */
 const fabric = new THREE.MeshPhysicalMaterial({
-  color: SHIRTS[0][1], map: mottle, bumpMap: knit, bumpScale: 0.35, roughness: 0.96, metalness: 0,
-  sheen: 1, sheenRoughness: 0.75, sheenColor: new THREE.Color(0xdfe6e6), envMapIntensity: 0.55, side: THREE.DoubleSide
+  color: SHIRTS[0][1], map: mottle, bumpMap: knit, bumpScale: 0.25, roughness: 0.95, metalness: 0, vertexColors: true,
+  sheen: 1, sheenRoughness: 0.7, sheenColor: new THREE.Color(0xffffff), envMapIntensity: 0.5, side: THREE.DoubleSide
 });
+/* hems and cuffs */
 const trim = new THREE.MeshPhysicalMaterial({
-  color: SHIRTS[0][1], bumpMap: grain, bumpScale: 0.5, roughness: 0.98, metalness: 0,
-  sheen: 1, sheenRoughness: 0.8, sheenColor: new THREE.Color(0xdfe6e6), envMapIntensity: 0.5
+  color: SHIRTS[0][1], bumpMap: hemKnit, bumpScale: 0.5, roughness: 0.97, metalness: 0,
+  sheen: 1, sheenRoughness: 0.75, sheenColor: new THREE.Color(0xffffff), envMapIntensity: 0.45
 });
+/* ribbed crew-neck band */
+const collarMat = new THREE.MeshPhysicalMaterial({
+  color: SHIRTS[0][1], map: rib.map, bumpMap: rib.bump, bumpScale: 1.1, roughness: 0.98, metalness: 0,
+  sheen: 1, sheenRoughness: 0.8, sheenColor: new THREE.Color(0xffffff), envMapIntensity: 0.45, side: THREE.DoubleSide
+});
+/* stitching lines */
+const stitchMat = new THREE.MeshStandardMaterial({ color: SHIRTS[0][1], roughness: 1 });
 
 /* =====================================================================
-   7. SHIRT GEOMETRY  (built from maths, shaped like the reference photo:
-      boxy oversized body, dropped shoulders, wide short sleeves, ribbed crew neck)
+   7. SHIRT GEOMETRY  (boxy oversized fit, dropped shoulders, wide drooping short sleeves,
+      thin ribbed crew neck, soft drape folds radiating from the armpits)
    ===================================================================== */
 const halfW = y => D.A * (1 + 0.012 * Math.sin(Math.PI * clamp(y / D.HB, 0, 1)));
 const halfD = y => D.B * (0.9 + 0.12 * Math.sin(Math.PI * clamp(y / D.HB, 0, 1)));
 const wr = (x, y) => 1 + 0.018 * Math.sin(x * 0.45 + y * 0.1) * (0.5 + 0.5 * sst(y / D.HB)) + 0.01 * Math.sin(x * 1.2 - y * 0.22 + 2);   // soft fabric folds
 const VS = 0.84;
+
+/* normal displacement (cm) that makes the cloth drape: radial wrinkles from the armpit,
+   soft waves at the hem and a few big slow undulations. sg = +1 front, -1 back. */
+function fold(x, y, sg) {
+  const ax = Math.abs(x), sx = x < 0 ? -1 : 1;
+  const dx = ax - 25.5, dy = y - 46.5, d = Math.hypot(dx, dy), ang = Math.atan2(dy, dx);
+  let f = 0.62 * Math.exp(-d / 12) * Math.sin(7 * ang + sx * 0.7 + sg * 1.9 + 0.9 * Math.sin(d * 0.35));
+  const hm = 1 - sst(y / 24);
+  f += 0.34 * hm * Math.sin(x * 0.45 + sg * 1.7 + 0.8 * Math.sin(x * 0.13 + sg));
+  f += 0.24 * Math.sin(x * 0.16 + y * 0.09 + sg * 2.3) * Math.sin(y * 0.05 + 0.6);
+  f += 0.14 * Math.sin(x * 0.9 + y * 0.35 + sg) * hm;
+  return f;
+}
 
 function bodyPt(th, v) {
   const c = Math.cos(th), s = Math.sin(th);
@@ -427,6 +462,9 @@ function bodyPt(th, v) {
   const a = halfW(yb), b = halfD(yb), q = 2 / D.N;
   let x = a * spow(c, q), z = b * spow(s, q);
   z *= lerp(wr(x, yb), 1, e);
+  const sg = clamp(z / 3, -1, 1), fv = fold(x, yb, sg) * (1 - e);   // drape, fades out toward the neck
+  const nx = x / (a * a), nz = z / (b * b), nl = Math.hypot(nx, nz) || 1;
+  x += nx / nl * fv; z += nz / nl * fv;
   x = lerp(x, D.NA * c, e); z = lerp(z, D.NB * s, e);
   let y = yb;
   if (e > 0) y += e * (D.RISE * Math.pow(Math.abs(c), 1.2) + D.BACK * Math.max(0, -s)) - e * e * D.FRONT * Math.pow(Math.max(0, s), 2);
@@ -435,15 +473,34 @@ function bodyPt(th, v) {
 function sleevePt(sg, ph, t) {
   const { L, ang, ry0, ry1, rz0, rz1, sy, sx } = SL;
   const dir = V3(sg * Math.cos(ang), -Math.sin(ang), 0), up = V3(sg * Math.sin(ang), Math.cos(ang), 0);
-  const ry = lerp(ry0, ry1, t) * (1 + 0.018 * Math.sin(ph * 4 + t * 5));
-  const rz = lerp(rz0, rz1, t) * (1 + 0.014 * Math.sin(ph * 3 + t * 4 + 1));
-  return V3(sg * sx, sy, 0).addScaledVector(dir, L * t).addScaledVector(up, ry * Math.cos(ph)).add(V3(0, 0, rz * Math.sin(ph)));
+  const m = 1 + 0.05 * Math.sin(ph * 3 + t * 4.2 + sg) * (0.3 + t) + 0.025 * Math.sin(ph * 5 - t * 3);
+  const ry = lerp(ry0, ry1, t) * m, rz = lerp(rz0, rz1, t) * m;
+  const p = V3(sg * sx, sy, 0).addScaledVector(dir, L * t);
+  p.y -= 1.8 * t * t;                                                  // sleeve droops under its own weight
+  return p.addScaledVector(up, ry * Math.cos(ph)).add(V3(0, 0, rz * Math.sin(ph)));
 }
 
-function surfaceGeo(nu, nv, pt, uMul, vOf) {
-  const pos = [], uv = [], idx = [];
+/* baked soft shadow: 1 = fully lit */
+function bodyShade(p) {
+  const f = fold(p.x, p.y, clamp(p.z / 3, -1, 1)), ax = Math.abs(p.x);
+  let s = 1 + 0.8 * f;
+  s *= 1 - 0.24 * Math.exp(-Math.hypot(ax - 26, p.y - 45) / 7);        // dark under the arm
+  s *= 1 - 0.08 * Math.exp(-p.y / 5);                                  // slightly darker toward the hem
+  return clamp(s, 0.6, 1);
+}
+function sleeveShade(sg, ph, t) {
+  const under = sst(-Math.cos(ph) * 1.2);
+  let s = 1 - 0.14 * under - 0.18 * under * Math.pow(1 - t, 1.5);
+  s *= 1 + 0.9 * 0.05 * Math.sin(ph * 3 + t * 4.2 + sg) * (0.3 + t);
+  s *= 1 - 0.2 * Math.pow(1 - t, 3);                                   // where the sleeve meets the body
+  return clamp(s, 0.6, 1);
+}
+
+function surfaceGeo(nu, nv, pt, uMul, vOf, shadeFn) {
+  const pos = [], uv = [], col = [], idx = [];
   for (let j = 0; j <= nv; j++) for (let i = 0; i <= nu; i++) {
     const p = pt(i / nu, j / nv); pos.push(p.x, p.y, p.z); uv.push(i / nu * uMul, vOf(j / nv));
+    const s = shadeFn ? shadeFn(p, i / nu, j / nv) : 1; col.push(s, s, s);
   }
   for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) {
     const a = j * (nu + 1) + i, b = a + 1, c = a + nu + 1, d = c + 1; idx.push(a, c, b, b, c, d);
@@ -451,6 +508,7 @@ function surfaceGeo(nu, nv, pt, uMul, vOf) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
   g.setIndex(idx); g.computeVertexNormals();
   const n = g.attributes.normal;                         // weld the seam so there is no shading line
   for (let j = 0; j <= nv; j++) {
@@ -463,6 +521,34 @@ function loopTube(pts, r, seg, mat) {
   return new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, true, 'centripetal'), seg, r, 10, true), mat);
 }
 
+/* thin ribbed collar: a flattened band that follows the neckline and lies on the shirt */
+function buildCollar() {
+  const NS = 240, NP = 20, P = [], C = V3();
+  for (let i = 0; i < NS; i++) { const p = bodyPt(i / NS * Math.PI * 2, 1); P.push(p); C.add(p); }
+  C.multiplyScalar(1 / NS);
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i <= NS; i++) {
+    const k = i % NS, p = P[k], T = P[(k + 1) % NS].clone().sub(P[(k + NS - 1) % NS]).normalize();
+    const sd = V3(p.x - C.x, 0, p.z - C.z).normalize(), front = Math.max(0, p.z / D.NB);
+    const dir = V3(sd.x * (1 - 0.8 * front), -(0.35 + 0.65 * front), sd.z * (1 - 0.8 * front)).normalize();   // direction the band lies away from the neck hole
+    const nrm = new THREE.Vector3().crossVectors(T, dir).normalize();
+    if (nrm.dot(sd.clone().add(V3(0, 1, 0))) < 0) nrm.negate();
+    for (let j = 0; j <= NP; j++) {
+      const a = j / NP * Math.PI * 2;
+      const q = p.clone().addScaledVector(dir, 0.3 + 1.1 * Math.cos(a)).addScaledVector(nrm, 0.15 + 0.42 * Math.sin(a));
+      pos.push(q.x, q.y, q.z); uv.push(i / NS * 46, j / NP);
+    }
+  }
+  for (let i = 0; i < NS; i++) for (let j = 0; j < NP; j++) {
+    const a = i * (NP + 1) + j, b = a + 1, c = a + NP + 1, d = c + 1; idx.push(a, c, b, b, c, d);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx); g.computeVertexNormals();
+  return new THREE.Mesh(g, collarMat);
+}
+
 let layer = null;          // the print canvas on the chest
 let shirt = null;
 
@@ -471,27 +557,33 @@ function buildShirt() {
 
   // body (front, back, shoulders, open neck, open hem)
   g.add(new THREE.Mesh(
-    surfaceGeo(160, 90, (u, v) => bodyPt(u * Math.PI * 2, v), 24, v => (v <= VS ? D.HB * v / VS : D.HB) / 8 + (v > VS ? (v - VS) / (1 - VS) * 3 : 0)),
+    surfaceGeo(160, 90, (u, v) => bodyPt(u * Math.PI * 2, v), 24,
+      v => (v <= VS ? D.HB * v / VS : D.HB) / 8 + (v > VS ? (v - VS) / (1 - VS) * 3 : 0), p => bodyShade(p)),
     fabric));
 
-  // sleeves
+  // sleeves: flat folded hem with a double-needle stitch line
   for (const sg of [1, -1]) {
-    g.add(new THREE.Mesh(surfaceGeo(72, 36, (u, t) => sleevePt(sg, u * Math.PI * 2, t), 10, t => t * SL.L / 8), fabric));
-    const cuff = []; for (let i = 0; i < 72; i++) cuff.push(sleevePt(sg, i / 72 * Math.PI * 2, 1));
-    g.add(loopTube(cuff, 0.45, 160, trim));
+    g.add(new THREE.Mesh(
+      surfaceGeo(72, 36, (u, t) => sleevePt(sg, u * Math.PI * 2, t), 10, t => t * SL.L / 8, (p, u, t) => sleeveShade(sg, u * Math.PI * 2, t)),
+      fabric));
+    const cuff = [], st = [];
+    for (let i = 0; i < 72; i++) { const ph = i / 72 * Math.PI * 2; cuff.push(sleevePt(sg, ph, 1)); st.push(sleevePt(sg, ph, 1 - 1.9 / SL.L)); }
+    g.add(loopTube(cuff, 0.3, 160, trim));
+    g.add(loopTube(st, 0.075, 160, stitchMat));
   }
 
-  // ribbed collar + hem
-  const neck = [], hem = [];
-  for (let i = 0; i < 120; i++) { const th = i / 120 * Math.PI * 2; neck.push(bodyPt(th, 1)); hem.push(bodyPt(th, 0)); }
-  g.add(loopTube(neck, 0.9, 240, trim));
-  g.add(loopTube(hem, 0.5, 300, trim));
+  // thin ribbed collar + stitched hem
+  g.add(buildCollar());
+  const hem = [], hemSt = [];
+  for (let i = 0; i < 120; i++) { const th = i / 120 * Math.PI * 2; hem.push(bodyPt(th, 0)); hemSt.push(bodyPt(th, 0.03)); }
+  g.add(loopTube(hem, 0.3, 300, trim));
+  g.add(loopTube(hemSt, 0.075, 300, stitchMat));
 
-  // printed artwork, curved to follow the chest
+  // printed artwork, curved to follow the chest (and the drape folds)
   const canvas = document.createElement('canvas');
   canvas.width = TEX_W; canvas.height = Math.round(TEX_W * PR.h / PR.w);
   const tex = new THREE.CanvasTexture(canvas); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-  const pbump = knit.clone(); pbump.needsUpdate = true; pbump.repeat.set(PR.w / 8, PR.h / 8);
+  const pbump = knit.clone(); pbump.needsUpdate = true; pbump.repeat.set(PR.w / 28, PR.h / 28);
   const printMat = new THREE.MeshStandardMaterial({
     map: tex, transparent: true, roughness: 0.88, metalness: 0, bumpMap: pbump, bumpScale: 0.3, envMapIntensity: 0.5,
     polygonOffset: true, polygonOffsetFactor: -2
@@ -499,7 +591,7 @@ function buildShirt() {
   const pg = new THREE.PlaneGeometry(PR.w, PR.h, 60, 60), pp = pg.attributes.position;
   for (let i = 0; i < pp.count; i++) {
     const x = pp.getX(i), y = PR.cy + pp.getY(i);
-    const z = halfD(y) * Math.pow(Math.max(0, 1 - Math.pow(Math.abs(x) / halfW(y), D.N)), 1 / D.N) * wr(x, y) + 0.28;
+    const z = halfD(y) * Math.pow(Math.max(0, 1 - Math.pow(Math.abs(x) / halfW(y), D.N)), 1 / D.N) * wr(x, y) + fold(x, y, 1) + 0.28;
     pp.setXYZ(i, x, y, z);
   }
   pg.computeVertexNormals();
@@ -520,9 +612,9 @@ function applySize() {
 
 function setShirtColor() {
   const hex = SHIRTS[state.shirt][1];
-  fabric.color.set(hex); trim.color.set(hex);
+  fabric.color.set(hex); trim.color.set(hex); collarMat.color.set(hex); stitchMat.color.set(hex);
   const dark = new THREE.Color(hex).getHSL({ h: 0, s: 0, l: 0 }).l < 0.25;
-  fabric.sheenColor.set(dark ? 0x6d7480 : 0xdfe6e6); trim.sheenColor.copy(fabric.sheenColor);
+  fabric.sheenColor.set(dark ? 0x6d7480 : 0xffffff); trim.sheenColor.copy(fabric.sheenColor); collarMat.sheenColor.copy(fabric.sheenColor);
 }
 
 /* =====================================================================
@@ -699,7 +791,7 @@ function frameCamera() {
 function resize() {
   const w = viewport.clientWidth, h = viewport.clientHeight;
   renderer.setSize(w, h); camera.aspect = w / h; camera.updateProjectionMatrix();
-  if (!userMoved) frameCamera(); else frameCamera.last = 0;
+  if (!userMoved) frameCamera();
 }
 new ResizeObserver(resize).observe(viewport); resize();
 
