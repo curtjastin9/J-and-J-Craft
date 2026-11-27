@@ -16,11 +16,18 @@
   .swatches{max-height:132px;overflow-y:auto;padding:3px}
   .sw{background:var(--c);transition:transform .15s}.sw:hover{transform:scale(1.1)}
   .lbl{font-size:12px;color:var(--muted);margin:12px 0 6px;font-weight:600}
+  .lbl small{font-weight:500}
   .custom{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
-  .custom input[type=color]{width:38px;height:32px;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
+  .custom input[type=color],.chk input[type=color]{width:38px;height:32px;padding:0;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:pointer}
   .custom small{color:var(--muted);font-size:12px;font-weight:600}
   .chk{display:flex;align-items:center;gap:8px;font-size:13px;margin-top:10px;cursor:pointer}
-  .chk input{accent-color:var(--red);width:16px;height:16px}
+  .chk input[type=checkbox]{accent-color:var(--red);width:16px;height:16px}
+  .dz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+  .dz{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px;border:1.5px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;font:600 11px Poppins,sans-serif;color:var(--ink);transition:.15s}
+  .dz:hover{border-color:#e9a9ae;transform:translateY(-1px)}
+  .dz:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+  .dz.on{border-color:var(--red);background:#fff0f0;box-shadow:0 8px 18px -12px rgba(217,35,50,.6)}
+  .dz canvas{width:100%;height:auto;display:block}
 </style>
 <script type="importmap">
 { "imports": { "three": "./js/vendor/three.module.min.js" } }
@@ -52,7 +59,7 @@
 
     <aside class="panel">
       <h1>Design your abaca bag</h1>
-      <p class="sub">Type your name or message, then pick any color or gradient.</p>
+      <p class="sub">Type your name or message, pick a color, then add your designs.</p>
 
       <div class="ed-sec">
         <div class="ed-h"><span class="ed-num">1</span><h3>Your text</h3></div>
@@ -60,7 +67,6 @@
         <div class="row2">
           <select class="txt-in" id="font" aria-label="Font"></select>
         </div>
-        <label class="chk"><input type="checkbox" id="hearts" checked> Add little hearts</label>
       </div>
 
       <div class="ed-sec">
@@ -76,7 +82,16 @@
       </div>
 
       <div class="ed-sec">
-        <div class="ed-h"><span class="ed-num">3</span><h3>Size and position</h3></div>
+        <div class="ed-h"><span class="ed-num">3</span><h3>Add designs</h3><button class="linkbtn" id="clearDesigns" type="button">Remove all</button></div>
+        <p class="muted">Tap a design to add it. Tap it again to remove it. You can mix designs from each list.</p>
+        <p class="muted" style="margin-bottom:0">Selected: <b id="designName">Hearts</b></p>
+        <div id="designs"></div>
+        <div class="rng" style="margin-top:14px"><label for="dsize">Design size</label><input type="range" id="dsize" min="0.6" max="1.5" step="0.05" value="1"></div>
+        <label class="chk"><input type="checkbox" id="ownColor"> Different color for designs <input type="color" id="dcolor" value="#ffffff" aria-label="Design color"></label>
+      </div>
+
+      <div class="ed-sec">
+        <div class="ed-h"><span class="ed-num">4</span><h3>Size and position</h3></div>
         <div class="rng"><label for="tsize">Text size</label><input type="range" id="tsize" min="0.1" max="0.45" step="0.005" value="0.3"></div>
         <div class="rng"><label for="tx">Left / Right</label><input type="range" id="tx" min="-1" max="1" step="0.01" value="0"></div>
         <div class="rng"><label for="ty">Down / Up</label><input type="range" id="ty" min="-1" max="1" step="0.01" value="0.12"></div>

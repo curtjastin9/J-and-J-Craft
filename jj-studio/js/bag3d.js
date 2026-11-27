@@ -38,10 +38,288 @@ const PALETTE = [
   { n: 'Rainbow', c: ['#ff0000', '#ffd000', '#2ecc71', '#3498db', '#9b59b6'] }, { n: 'Midnight', c: ['#232526', '#5a5f66'] }
 ];
 
+/* ===== 1b. DESIGNS (all drawn in code, so they take any colour and stay sharp) ===== */
+const TAU = Math.PI * 2;
+const dot = (c, x, y, r) => { c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill(); };
+const line = (c, w, build) => { c.lineWidth = w; c.lineCap = 'round'; c.lineJoin = 'round'; c.beginPath(); build(); c.stroke(); };
+function oval(c, x, y, rx, ry, a = 0) { c.beginPath(); c.ellipse(x, y, rx, ry, a, 0, TAU); c.fill(); }
+function leaf(c, x, y, len, a) {                        // pointed leaf growing from (x, y) toward angle a
+  c.save(); c.translate(x, y); c.rotate(a);
+  c.beginPath(); c.moveTo(0, 0);
+  c.quadraticCurveTo(len * 0.5, -len * 0.42, len, 0);
+  c.quadraticCurveTo(len * 0.5, len * 0.42, 0, 0);
+  c.fill(); c.restore();
+}
+function heart(c, x, y, s) {
+  c.beginPath(); c.moveTo(x, y + s * 0.35);
+  c.bezierCurveTo(x - s * 0.9, y - s * 0.25, x - s * 0.5, y - s * 0.9, x, y - s * 0.4);
+  c.bezierCurveTo(x + s * 0.5, y - s * 0.9, x + s * 0.9, y - s * 0.25, x, y + s * 0.35);
+  c.fill();
+}
+function polygon(c, pts) {
+  c.beginPath(); pts.forEach(([x, y], i) => i ? c.lineTo(x, y) : c.moveTo(x, y)); c.closePath(); c.fill();
+}
+
+/* Corner icons: drawn around (0,0), about 2s wide */
+const ICONS = {
+  hearts: (c, s) => heart(c, 0, s * 0.2, s * 1.35),
+  stars: (c, s) => polygon(c, Array.from({ length: 10 }, (_, i) => {
+    const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? s * 0.42 : s;
+    return [Math.cos(a) * r, Math.sin(a) * r];
+  })),
+  sparkles: (c, s) => {
+    c.beginPath(); c.moveTo(0, -s);
+    c.quadraticCurveTo(s * 0.12, -s * 0.12, s, 0); c.quadraticCurveTo(s * 0.12, s * 0.12, 0, s);
+    c.quadraticCurveTo(-s * 0.12, s * 0.12, -s, 0); c.quadraticCurveTo(-s * 0.12, -s * 0.12, 0, -s);
+    c.fill();
+  },
+  flowers: (c, s) => {
+    for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + i * TAU / 5; oval(c, Math.cos(a) * s * 0.62, Math.sin(a) * s * 0.62, s * 0.38, s * 0.28, a); }
+    dot(c, 0, 0, s * 0.18);
+  },
+  butterflies: (c, s) => {
+    for (const k of [-1, 1]) {
+      oval(c, k * s * 0.52, -s * 0.28, s * 0.55, s * 0.36, k * -0.6);
+      oval(c, k * s * 0.4, s * 0.36, s * 0.38, s * 0.27, k * 0.65);
+      line(c, s * 0.07, () => { c.moveTo(0, -s * 0.35); c.quadraticCurveTo(k * s * 0.08, -s * 0.8, k * s * 0.32, -s * 0.92); });
+    }
+    oval(c, 0, s * 0.05, s * 0.09, s * 0.52);
+  },
+  music: (c, s) => {
+    oval(c, -s * 0.5, s * 0.6, s * 0.34, s * 0.25, -0.35); oval(c, s * 0.5, s * 0.4, s * 0.34, s * 0.25, -0.35);
+    line(c, s * 0.13, () => { c.moveTo(-s * 0.22, s * 0.55); c.lineTo(-s * 0.22, -s * 0.6); c.moveTo(s * 0.78, s * 0.35); c.lineTo(s * 0.78, -s * 0.8); });
+    polygon(c, [[-s * 0.28, -s * 0.72], [s * 0.84, -s * 0.94], [s * 0.84, -s * 0.62], [-s * 0.28, -s * 0.4]]);
+  },
+  paws: (c, s) => {
+    c.beginPath(); c.moveTo(0, -s * 0.05);
+    c.bezierCurveTo(s * 0.45, -s * 0.05, s * 0.85, s * 0.75, s * 0.3, s * 0.78);
+    c.quadraticCurveTo(0, s * 0.65, -s * 0.3, s * 0.78);
+    c.bezierCurveTo(-s * 0.85, s * 0.75, -s * 0.45, -s * 0.05, 0, -s * 0.05); c.fill();
+    for (const [x, y, a] of [[-0.74, -0.12, -0.5], [-0.28, -0.58, -0.15], [0.28, -0.58, 0.15], [0.74, -0.12, 0.5]]) oval(c, x * s, y * s, s * 0.19, s * 0.26, a);
+  },
+  leaves: (c, s) => {
+    leaf(c, -s * 0.15, s * 0.25, s * 1.15, -0.75); leaf(c, -s * 0.15, s * 0.25, s * 1.0, -2.05);
+    line(c, s * 0.1, () => { c.moveTo(-s * 0.15, s * 0.25); c.quadraticCurveTo(-s * 0.05, s * 0.65, s * 0.25, s * 0.9); });
+  }
+};
+
+/* Above the text: (0,0) is bottom centre, u is half width. h = height in u */
+const TOPPERS = {
+  crown: { h: 1.25, draw: (c, u) => {
+    polygon(c, [[-u * 0.85, -u * 0.25], [-u, -u * 1.0], [-u * 0.45, -u * 0.6], [0, -u * 1.15], [u * 0.45, -u * 0.6], [u, -u * 1.0], [u * 0.85, -u * 0.25]]);
+    c.fillRect(-u * 0.85, -u * 0.16, u * 1.7, u * 0.16);
+    for (const [x, y] of [[-1, -1.07], [0, -1.23], [1, -1.07]]) dot(c, x * u, y * u, u * 0.1);
+  } },
+  bow: { h: 1.1, draw: (c, u) => {
+    for (const k of [-1, 1]) {
+      line(c, u * 0.13, () => { c.moveTo(0, -u * 0.62); c.bezierCurveTo(k * u * 0.5, -u * 1.25, k * u * 1.2, -u * 1.05, k * u * 0.95, -u * 0.6); c.bezierCurveTo(k * u * 0.85, -u * 0.28, k * u * 0.35, -u * 0.4, 0, -u * 0.62); });
+      line(c, u * 0.13, () => { c.moveTo(k * u * 0.08, -u * 0.55); c.quadraticCurveTo(k * u * 0.2, -u * 0.2, k * u * 0.55, -u * 0.07); });
+    }
+    oval(c, 0, -u * 0.62, u * 0.18, u * 0.2);
+  } },
+  gradcap: { h: 1.15, draw: (c, u) => {
+    polygon(c, [[0, -u * 1.12], [u, -u * 0.75], [0, -u * 0.38], [-u, -u * 0.75]]);
+    c.beginPath(); c.moveTo(-u * 0.55, -u * 0.46); c.lineTo(0, -u * 0.26); c.lineTo(u * 0.55, -u * 0.46); c.lineTo(u * 0.55, -u * 0.13);
+    c.quadraticCurveTo(0, u * 0.1, -u * 0.55, -u * 0.13); c.closePath(); c.fill();
+    line(c, u * 0.07, () => { c.moveTo(0, -u * 0.75); c.lineTo(u * 0.82, -u * 0.62); c.lineTo(u * 0.82, -u * 0.2); });
+    oval(c, u * 0.82, -u * 0.12, u * 0.09, u * 0.15);
+  } },
+  rays: { h: 0.95, draw: (c, u) => {
+    for (let i = 0; i < 7; i++) {
+      const a = Math.PI + (i + 0.5) * Math.PI / 7, r = i % 2 ? 0.68 : 0.92;
+      line(c, u * 0.11, () => { c.moveTo(Math.cos(a) * u * 0.38, Math.sin(a) * u * 0.38); c.lineTo(Math.cos(a) * u * r, Math.sin(a) * u * r); });
+    }
+  } }
+};
+
+/* Under the text: (0,0) is top centre, w is half width, u is the stroke unit. h = height in u */
+const UNDERLINES = {
+  swoosh: { h: 1.0, draw: (c, w, u) => {
+    c.beginPath(); c.moveTo(-w, u * 0.55);
+    c.quadraticCurveTo(0, -u * 0.05, w, u * 0.25); c.quadraticCurveTo(0, u * 0.3, -w, u * 0.55); c.fill();
+    line(c, u * 0.1, () => { c.moveTo(-w * 0.45, u * 0.82); c.quadraticCurveTo(w * 0.15, u * 0.55, w * 0.7, u * 0.68); });
+  } },
+  heartline: { h: 0.9, draw: (c, w, u) => {
+    for (const k of [-1, 1]) {
+      line(c, u * 0.11, () => { c.moveTo(k * u * 0.75, u * 0.45); c.lineTo(k * w, u * 0.45); });
+      dot(c, k * w, u * 0.45, u * 0.12);
+    }
+    heart(c, 0, u * 0.62, u * 0.75);
+  } },
+  wave: { h: 0.8, draw: (c, w, u) => line(c, u * 0.15, () => {
+    for (let i = 0; i <= 120; i++) { const x = -w + 2 * w * i / 120, y = u * 0.4 + Math.sin(i / 120 * TAU * 4) * u * 0.24; i ? c.lineTo(x, y) : c.moveTo(x, y); }
+  }) },
+  vine: { h: 1.1, draw: (c, w, u) => {
+    const at = x => u * 0.55 + Math.sin(x / w * Math.PI) * u * 0.12;
+    line(c, u * 0.09, () => { for (let i = 0; i <= 60; i++) { const x = -w + 2 * w * i / 60; i ? c.lineTo(x, at(x)) : c.moveTo(x, at(x)); } });
+    for (let i = 1; i <= 9; i++) { const x = -w + 2 * w * i / 10; leaf(c, x, at(x), u * 0.55, i % 2 ? -0.75 : 0.75); }
+  } },
+  diamonds: { h: 0.8, draw: (c, w, u) => {
+    const gem = (x, r) => polygon(c, [[x, u * 0.4 - r], [x + r, u * 0.4], [x, u * 0.4 + r], [x - r, u * 0.4]]);
+    gem(0, u * 0.35); gem(-u * 0.6, u * 0.18); gem(u * 0.6, u * 0.18);
+    for (let x = u * 1.15; x <= w; x += u * 0.42) { dot(c, x, u * 0.4, u * 0.09); dot(c, -x, u * 0.4, u * 0.09); }
+  } }
+};
+
+/* Frames go around everything. b = inner box; u = stroke unit. They return the outer box. */
+const makeBox = (l, t, r, b) => ({ l, t, r, b, get w() { return this.r - this.l; }, get h() { return this.b - this.t; }, get cx() { return (this.l + this.r) / 2; }, get cy() { return (this.t + this.b) / 2; } });
+const around = (x, y, rx, ry) => makeBox(x - rx, y - ry, x + rx, y + ry);
+function roundRect(c, x, y, w, h, r) {
+  c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+const FRAMES = {
+  wreath: {
+    size: (b, u) => around(b.cx, b.cy, b.w * 0.67 + u * 0.7, b.h * 0.69 + u * 0.7),
+    draw: (c, b, u) => {
+      const rx = b.w * 0.67, ry = b.h * 0.69;
+      for (const k of [-1, 1]) {
+        const pt = a => [b.cx + k * Math.cos(a) * rx, b.cy + Math.sin(a) * ry];
+        const from = 1.42, to = -0.95;
+        line(c, u * 0.11, () => { for (let i = 0; i <= 50; i++) { const p = pt(from + (to - from) * i / 50); i ? c.lineTo(...p) : c.moveTo(...p); } });
+        for (let i = 1; i <= 11; i++) {
+          const a = from + (to - from) * i / 11, [x, y] = pt(a);
+          const dir = Math.atan2(-Math.cos(a) * ry, k * Math.sin(a) * rx);
+          leaf(c, x, y, u * 0.65, dir - 0.7); leaf(c, x, y, u * 0.65, dir + 0.7);
+        }
+      }
+    }
+  },
+  ring: {
+    size: (b, u) => around(b.cx, b.cy, b.w * 0.67 + u * 0.4, b.h * 0.69 + u * 0.4),
+    draw: (c, b, u) => {
+      line(c, u * 0.16, () => c.ellipse(b.cx, b.cy, b.w * 0.67 + u * 0.25, b.h * 0.69 + u * 0.25, 0, 0, TAU));
+      line(c, u * 0.06, () => c.ellipse(b.cx, b.cy, b.w * 0.67 - u * 0.05, b.h * 0.69 - u * 0.05, 0, 0, TAU));
+    }
+  },
+  heartframe: {
+    k: b => Math.max(b.w / 2 / 11.5, b.h / 2 / 5.5),
+    size(b, u) { const k = this.k(b), y = b.cy - k * 0.5; return makeBox(b.cx - 16 * k - u * 0.2, y - 12 * k - u * 0.2, b.cx + 16 * k + u * 0.2, y + 17 * k + u * 0.2); },
+    draw(c, b, u) {
+      const k = this.k(b), y0 = b.cy - k * 0.5;
+      line(c, u * 0.18, () => {
+        for (let i = 0; i <= 160; i++) {
+          const t = i / 160 * TAU, x = b.cx + 16 * Math.pow(Math.sin(t), 3) * k;
+          const y = y0 - (13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)) * k;
+          i ? c.lineTo(x, y) : c.moveTo(x, y);
+        }
+        c.closePath();
+      });
+    }
+  },
+  corners: {
+    size: (b, u) => makeBox(b.l - u * 0.8, b.t - u * 0.8, b.r + u * 0.8, b.b + u * 0.8),
+    draw: (c, b, u) => {
+      const len = Math.min(b.w, b.h) * 0.3, p = u * 0.6;
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+        const x = (sx < 0 ? b.l : b.r) + sx * p, y = (sy < 0 ? b.t : b.b) + sy * p;
+        line(c, u * 0.16, () => { c.moveTo(x - sx * len, y); c.lineTo(x, y); c.lineTo(x, y - sy * len); });
+        dot(c, x - sx * u * 0.5, y - sy * u * 0.5, u * 0.14);
+      }
+    }
+  },
+  stitch: {
+    size: (b, u) => makeBox(b.l - u * 0.9, b.t - u * 0.9, b.r + u * 0.9, b.b + u * 0.9),
+    draw: (c, b, u) => {
+      c.save(); c.setLineDash([u * 0.4, u * 0.34]);
+      line(c, u * 0.14, () => roundRect(c, b.l - u * 0.7, b.t - u * 0.7, b.w + u * 1.4, b.h + u * 1.4, u * 1.1));
+      c.restore();
+    }
+  }
+};
+
+/* The list shown to the customer. max = how many can be picked in that group. */
+const GROUPS = [
+  { key: 'accent', label: 'Corner accents', hint: 'pick up to 2', max: 2, items: [
+    ['hearts', 'Hearts'], ['stars', 'Stars'], ['sparkles', 'Sparkles'], ['flowers', 'Flowers'],
+    ['butterflies', 'Butterflies'], ['music', 'Music notes'], ['paws', 'Paw prints'], ['leaves', 'Leaves']] },
+  { key: 'top', label: 'Above the text', hint: 'pick 1', max: 1, items: [
+    ['crown', 'Crown'], ['bow', 'Ribbon bow'], ['gradcap', 'Grad cap'], ['rays', 'Sun rays']] },
+  { key: 'under', label: 'Under the text', hint: 'pick 1', max: 1, items: [
+    ['swoosh', 'Swoosh'], ['heartline', 'Heart line'], ['wave', 'Wave'], ['vine', 'Leaf vine'], ['diamonds', 'Diamonds']] },
+  { key: 'frame', label: 'Frame', hint: 'pick 1', max: 1, items: [
+    ['wreath', 'Laurel wreath'], ['ring', 'Oval ring'], ['heartframe', 'Big heart'], ['corners', 'Elegant corners'], ['stitch', 'Stitched box']] }
+];
+
+/**
+ * Lays out the text plus the chosen designs, then shrinks everything to fit the area.
+ * o = { lines, font, size, picks, scale, areaW, areaH, x, y, textPaint(ctx, box), designPaint(ctx, box) }
+ */
+function compose(ctx, o) {
+  ctx.save();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  let size = o.size;
+  ctx.font = o.font(size);
+  const widestOf = () => Math.max(...o.lines.map(l => ctx.measureText(l).width)) || 1;
+  size *= Math.min(1, (o.areaW * 0.9) / widestOf(), (o.areaH * 0.85) / (o.lines.length * size * 1.2));
+  ctx.font = o.font(size);
+  const widest = widestOf(), lh = size * 1.2;
+  const rows = o.lines.map((t, i) => ({ t, y: -(o.lines.length - 1) * lh / 2 + i * lh }));
+
+  // real ink size of the letters, so designs never sit on top of tall or swirly fonts
+  let top = Infinity, bot = -Infinity, half = widest / 2;
+  for (const r of rows) {
+    const m = ctx.measureText(r.t || ' ');
+    top = Math.min(top, r.y - (m.actualBoundingBoxAscent ?? size * 0.55));
+    bot = Math.max(bot, r.y + (m.actualBoundingBoxDescent ?? size * 0.5));
+    half = Math.max(half, m.actualBoundingBoxLeft || 0, m.actualBoundingBoxRight || 0);
+  }
+  const text = makeBox(-half, top, half, bot), ds = o.scale, u = size * 0.23 * ds;
+  let inner = makeBox(text.l, text.t, text.r, text.b);
+  const grow = (l, t, r, b) => { inner = makeBox(Math.min(inner.l, l), Math.min(inner.t, t), Math.max(inner.r, r), Math.max(inner.b, b)); };
+
+  const topper = TOPPERS[o.picks.top[0]], tu = size * 0.34 * ds, topY = text.t - size * 0.05;
+  if (topper) grow(-tu * 1.15, topY - topper.h * tu - tu * 0.12, tu * 1.15, topY);
+
+  const under = UNDERLINES[o.picks.under[0]], uw = Math.max(half * 0.92, size * 0.65), uu = size * 0.2 * ds, underY = text.b + size * 0.06;
+  if (under) grow(-uw - uu * 0.2, underY, uw + uu * 0.2, underY + under.h * uu);
+
+  const corners = [];                                     // 1 accent: two opposite corners. 2 accents: all four
+  o.picks.accent.forEach((id, n) => {
+    for (const [sx, sy] of n === 0 ? [[-1, -1], [1, 1]] : [[1, -1], [-1, 1]]) {
+      const x = sx < 0 ? text.l : text.r, y = sy < 0 ? text.t : text.b;
+      corners.push({ id, list: [
+        [x + sx * u * 1.0, y + sy * u * 0.05, u, sx * 0.2],
+        [x + sx * u * 0.1, y + sy * u * 0.85, u * 0.55, -sx * 0.25],
+        [x + sx * u * 1.75, y - sy * u * 0.95, u * 0.42, sx * 0.35]] });
+      grow(Math.min(x, x + sx * u * 2.25), Math.min(y, y + sy * u * 1.5), Math.max(x, x + sx * u * 2.25), Math.max(y, y + sy * u * 1.5));
+    }
+  });
+
+  const frame = FRAMES[o.picks.frame[0]], fu = size * 0.16 * ds;
+  const all = frame ? frame.size(inner, fu) : inner;
+  const fit = Math.min(1, (o.areaW * 0.96) / all.w, (o.areaH * 0.88) / all.h);
+
+  const keepIn = (v, half, full) => Math.min(Math.max(v, half), full - half);   // never let a design run off the pocket
+  const px = keepIn(o.x, all.w * fit / 2, o.areaW), py = keepIn(o.y, all.h * fit / 2, o.areaH);
+  ctx.translate(px, py); ctx.scale(fit, fit); ctx.translate(-all.cx, -all.cy);
+  const shadow = () => { ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = size * fit * 0.04; ctx.shadowOffsetY = size * fit * 0.015; };
+
+  shadow();
+  const paintStyle = o.designPaint(ctx, all);
+  const reset = () => { ctx.fillStyle = paintStyle; ctx.strokeStyle = paintStyle; };
+  if (frame) { reset(); frame.draw(ctx, inner, fu); }
+  if (topper) { reset(); ctx.save(); ctx.translate(0, topY); topper.draw(ctx, tu); ctx.restore(); }
+  if (under) { reset(); ctx.save(); ctx.translate(0, underY); under.draw(ctx, uw, uu); ctx.restore(); }
+  for (const cl of corners) for (const [x, y, s, a] of cl.list) {
+    reset(); ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    ICONS[cl.id](ctx, s);
+    ctx.restore();
+  }
+
+  ctx.fillStyle = o.textPaint(ctx, text);
+  rows.forEach(r => ctx.fillText(r.t, 0, r.y));
+  ctx.restore();
+}
+
 const $ = s => document.querySelector(s);
 const viewport = $('#viewport');
 
-const state = { text: 'Jaye', font: 0, fill: PALETTE[0], textSize: 0.3, tx: 0, ty: 0.12, hearts: true, scarf: true };
+const state = {
+  text: 'Jaye', font: 0, fill: PALETTE[0], textSize: 0.3, tx: 0, ty: 0.12, scarf: true,
+  picks: { accent: ['hearts'], top: [], under: [], frame: [] },
+  designScale: 1, ownColor: false, designColor: '#ffffff'
+};
 
 /* ===== 2. RENDERER / SCENE (plain studio table, no props) ===== */
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -380,20 +658,13 @@ function frameCamera() {
   camera.position.copy(frontCam); camTween = null; controls.update();
 }
 
-/* ===== 6. PAINT THE TEXT ===== */
-const fillFor = (ctx, w, h) => {
-  const c = state.fill.c;
-  if (c.length === 1) return c[0];
-  const g = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
-  c.forEach((col, i) => g.addColorStop(i / (c.length - 1), col)); return g;
+/* ===== 6. PAINT THE TEXT + DESIGNS ===== */
+const gradientFor = (colors, ctx, box) => {
+  if (colors.length === 1) return colors[0];
+  const g = ctx.createLinearGradient(box.l, box.t, box.r, box.b);
+  colors.forEach((col, i) => g.addColorStop(i / (colors.length - 1), col)); return g;
 };
-
-function heart(ctx, x, y, s) {
-  ctx.beginPath(); ctx.moveTo(x, y + s * 0.35);
-  ctx.bezierCurveTo(x - s * 0.9, y - s * 0.25, x - s * 0.5, y - s * 0.9, x, y - s * 0.4);
-  ctx.bezierCurveTo(x + s * 0.5, y - s * 0.9, x + s * 0.9, y - s * 0.25, x, y + s * 0.35);
-  ctx.fill();
-}
+const designColors = () => state.ownColor ? [state.designColor] : state.fill.c;
 
 const isReady = () => !!state.text.trim();
 
@@ -406,28 +677,14 @@ function paint() {
     ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = `700 ${CH * 0.07}px Poppins, Arial, sans-serif`; ctx.fillText('Your text here', CW / 2, CH * 0.45); ctx.restore();
   } else {
-    const lines = state.text.replace(/\s+$/, '').split('\n').slice(0, 3);
-    let size = CH * state.textSize;
-    ctx.font = FONTS[state.font][1](size);
-    let widest = Math.max(...lines.map(l => ctx.measureText(l).width)) || 1;
-    size *= Math.min(1, (CW * 0.86) / widest, (CH * 0.8) / (lines.length * size * 1.2));
-    ctx.font = FONTS[state.font][1](size);
-    widest = Math.max(...lines.map(l => ctx.measureText(l).width)) || 1;
-    const lh = size * 1.2, total = lines.length * lh;
-
-    ctx.save();
-    ctx.translate(CW / 2 + state.tx * CW * 0.4, CH / 2 - state.ty * CH * 0.4);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = fillFor(ctx, widest, total);
-    ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = size * 0.04; ctx.shadowOffsetY = size * 0.015;
-    lines.forEach((line, i) => ctx.fillText(line, 0, -(lines.length - 1) * lh / 2 + i * lh));
-    if (state.hearts) {
-      const s = size * 0.2;
-      heart(ctx, -widest / 2 + s * 0.2, -total / 2 - s * 0.1, s);
-      heart(ctx, -widest / 2 + s * 1.5, -total / 2 - s * 0.5, s * 0.7);
-      heart(ctx, widest / 2 - s * 0.2, -total / 2 + lh * 0.15, s * 0.8);
-    }
-    ctx.restore();
+    compose(ctx, {
+      lines: state.text.replace(/\s+$/, '').split('\n').slice(0, 3),
+      font: FONTS[state.font][1], size: CH * state.textSize,
+      picks: state.picks, scale: state.designScale, areaW: CW, areaH: CH,
+      x: CW / 2 + state.tx * CW * 0.4, y: CH / 2 - state.ty * CH * 0.4,
+      textPaint: (c, box) => gradientFor(state.fill.c, c, box),
+      designPaint: (c, box) => gradientFor(designColors(), c, box)
+    });
   }
   tex.needsUpdate = true;
   const ready = isReady();
@@ -452,10 +709,57 @@ $('#c2').oninput = () => setFill({ n: 'Custom gradient', c: [$('#c1').value, $('
 $('#gradBtn').onclick = () => setFill({ n: 'Custom gradient', c: [$('#c1').value, $('#c2').value] });
 renderPalette();
 
+/* design list: one box per design, with a small live picture of it */
+const designName = (key, id) => GROUPS.find(g => g.key === key).items.find(i => i[0] === id)[1];
+const pickedNames = () => GROUPS.flatMap(g => state.picks[g.key].map(id => designName(g.key, id)));
+
+$('#designs').innerHTML = GROUPS.map(g => `
+  <div class="lbl">${g.label} <small>· ${g.hint}</small></div>
+  <div class="dz-grid">${g.items.map(([id, name]) => `
+    <button type="button" class="dz" data-group="${g.key}" data-id="${id}" aria-pressed="false">
+      <canvas width="168" height="112" aria-hidden="true"></canvas><span>${name}</span>
+    </button>`).join('')}
+  </div>`).join('');
+
+function drawThumbs() {
+  document.querySelectorAll('.dz').forEach(b => {
+    const cv = b.querySelector('canvas'), g = cv.getContext('2d');
+    const picks = { accent: [], top: [], under: [], frame: [] }; picks[b.dataset.group] = [b.dataset.id];
+    g.clearRect(0, 0, cv.width, cv.height);
+    compose(g, {
+      lines: ['Aa'], font: FONTS[0][1], size: 54, picks, scale: 1.1,
+      areaW: cv.width, areaH: cv.height, x: cv.width / 2, y: cv.height / 2,
+      textPaint: () => '#b9adb1', designPaint: () => '#d92332'
+    });
+  });
+}
+
+function syncDesigns() {
+  document.querySelectorAll('.dz').forEach(b => {
+    const on = state.picks[b.dataset.group].includes(b.dataset.id);
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', on);
+  });
+  const names = pickedNames();
+  $('#designName').textContent = names.length ? names.join(', ') : 'None';
+}
+
+$('#designs').onclick = e => {
+  const b = e.target.closest('.dz'); if (!b) return;
+  const { group, id } = b.dataset, max = GROUPS.find(g => g.key === group).max;
+  let list = state.picks[group];
+  list = list.includes(id) ? list.filter(x => x !== id) : [...list, id].slice(-max);   // over the limit: the oldest one is replaced
+  state.picks[group] = list;
+  syncDesigns(); paint();
+};
+$('#clearDesigns').onclick = () => { for (const k in state.picks) state.picks[k] = []; syncDesigns(); paint(); };
+$('#dsize').addEventListener('input', e => { state.designScale = parseFloat(e.target.value); paint(); });
+$('#ownColor').onchange = e => { state.ownColor = e.target.checked; paint(); };
+$('#dcolor').oninput = e => { state.designColor = e.target.value; state.ownColor = true; $('#ownColor').checked = true; paint(); };
+drawThumbs(); syncDesigns();
+
 $('#txt').addEventListener('input', e => { state.text = e.target.value; paint(); });
 $('#font').addEventListener('change', e => { state.font = +e.target.value; paint(); });
 for (const [id, key] of [['tsize', 'textSize'], ['tx', 'tx'], ['ty', 'ty']]) $('#' + id).addEventListener('input', e => { state[key] = parseFloat(e.target.value); paint(); });
-$('#hearts').onchange = e => { state.hearts = e.target.checked; paint(); };
 $('#scarf').onchange = e => { state.scarf = e.target.checked; scarfGroup.visible = state.scarf; };
 
 $('#spin').onclick = e => {
@@ -482,10 +786,11 @@ function snapshot() {
 }
 $('#add').onclick = () => {
   if (!isReady()) return;
-  const text = state.text.trim().replace(/\n/g, ' ');
+  const text = state.text.trim().replace(/\n/g, ' '), names = pickedNames();
+  const designs = names.length ? ` · Designs: ${names.join(', ')}${state.ownColor ? ` (color ${state.designColor})` : ''}` : '';
   const ok = Cart.add({
     key: 'bag-' + Date.now(), id: 'bag-custom', name: 'Custom Abaca Bag',
-    detail: `Text “${text}” · ${FONTS[state.font][0]} · ${state.fill.n}${state.hearts ? ' · Hearts' : ''}${state.scarf ? ' · With scarf' : ''}`,
+    detail: `Text “${text}” · ${FONTS[state.font][0]} · ${state.fill.n}${designs}${state.scarf ? ' · With scarf' : ''}`,
     price: PRICE, art: 'mug', bg: 'bg-yellow', preview: snapshot(), design: toJPEG(printLayer.canvas, 1000, 0.85)
   }, 1);
   if (!ok) return toast('Could not save. Browser storage is full.');
@@ -509,4 +814,4 @@ renderer.setAnimationLoop(() => {
 paint();
 $('#loading').remove();
 Promise.all(['400 40px "Kaushan Script"', '400 40px "Great Vibes"', '700 40px "Dancing Script"', '400 40px Pacifico', '700 40px Poppins', '800 40px "Baloo 2"']
-  .map(f => document.fonts.load(f))).then(paint).catch(() => {});
+  .map(f => document.fonts.load(f))).then(() => { drawThumbs(); paint(); }).catch(() => {});
