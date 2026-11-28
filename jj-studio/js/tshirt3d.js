@@ -27,8 +27,8 @@ const SHIRTS = [
 ];
 
 /* Shirt shape in cm (boxy oversized tee, narrow crew neck) */
-const D = { A: 31, B: 11.5, HB: 66, NA: 9.4, NB: 8.4, N: 4.2, RISE: 6.2, BACK: 2.5, FRONT: 2.4 };
-const SL = { L: 27, ang: 17 * Math.PI / 180, ry0: 12.8, ry1: 11.6, rz0: 9.6, rz1: 8.4, sy: D.HB - 11.8, sx: D.A - 6 };
+const D = { A: 32, B: 11.5, HB: 66, NA: 9.0, NB: 8.0, N: 4.4, RISE: 6.4, BACK: 2.5, FRONT: 2.4 };
+const SL = { L: 24, ang: 31 * Math.PI / 180, ry0: 14, ry1: 13, rz0: 10, rz1: 9.2, sy: D.HB - 10.2, sx: D.A - 5.5 };
 const PR = { w: 34, h: 38, cy: 41 };   // print area on the chest
 
 const FONTS = [
@@ -323,7 +323,7 @@ const state = {
   theme: 'xmas', scheme: 0, art: true,
   l1: '', l2: '', font: 0, fill: 0, outline: 'dark', caps: false,
   scale: 0.9, tsize: 1, tx: 0, ty: 0,
-  shirt: 0, size: 'M',
+  shirt: 1, size: 'M',                 // shirt: 1 = Blue Gray (like the reference photo)
   edited: { text: false, font: false, color: false }
 };
 
@@ -335,7 +335,7 @@ renderer.setClearColor(0x000000, 0);
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.12;
+renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 viewport.prepend(renderer.domElement);
@@ -346,12 +346,12 @@ scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnviron
 const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 80);
 
 /* soft studio set-up: big front key from above, cool side fill, back rim, so folds read clearly */
-const key = new THREE.DirectionalLight(0xfff4e6, 2.3); key.position.set(3, 10, 10); key.castShadow = true;
+const key = new THREE.DirectionalLight(0xfff4e6, 1.9); key.position.set(3, 10, 10); key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048); key.shadow.bias = -0.0008; key.shadow.normalBias = 0.05; key.shadow.radius = 6;
 Object.assign(key.shadow.camera, { left: -9, right: 9, top: 9, bottom: -3, near: 1, far: 30 }); scene.add(key);
-const fill = new THREE.DirectionalLight(0xcfd8ff, 0.7); fill.position.set(-9, 3, 6); scene.add(fill);
-const rim = new THREE.DirectionalLight(0xffffff, 0.9); rim.position.set(0, 6, -9); scene.add(rim);
-scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2a2a, 0.45));
+const fill = new THREE.DirectionalLight(0xcfd8ff, 0.9); fill.position.set(-9, 3, 6); scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffffff, 0.6); rim.position.set(0, 6, -9); scene.add(rim);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2a2a, 0.55));
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.dampingFactor = 0.08; controls.enablePan = false;
@@ -418,7 +418,7 @@ const rib = ribTextures();
 
 /* body + sleeves (vertex colours add soft baked shadows in the folds and under the arms) */
 const fabric = new THREE.MeshPhysicalMaterial({
-  color: SHIRTS[0][1], map: mottle, bumpMap: knit, bumpScale: 0.25, roughness: 0.95, metalness: 0, vertexColors: true,
+  color: SHIRTS[0][1], map: mottle, bumpMap: knit, bumpScale: 0.12, roughness: 0.92, metalness: 0, vertexColors: true,
   sheen: 1, sheenRoughness: 0.7, sheenColor: new THREE.Color(0xffffff), envMapIntensity: 0.5, side: THREE.DoubleSide
 });
 /* hems and cuffs */
@@ -438,7 +438,7 @@ const stitchMat = new THREE.MeshStandardMaterial({ color: SHIRTS[0][1], roughnes
    7. SHIRT GEOMETRY  (boxy oversized fit, dropped shoulders, wide drooping short sleeves,
       thin ribbed crew neck, soft drape folds radiating from the armpits)
    ===================================================================== */
-const halfW = y => D.A * (1 + 0.012 * Math.sin(Math.PI * clamp(y / D.HB, 0, 1)));
+const halfW = y => D.A * (1 + 0.012 * Math.sin(Math.PI * clamp(y / D.HB, 0, 1)) + 0.035 * (1 - clamp(y / D.HB, 0, 1)));
 const halfD = y => D.B * (0.9 + 0.12 * Math.sin(Math.PI * clamp(y / D.HB, 0, 1)));
 const wr = (x, y) => 1 + 0.018 * Math.sin(x * 0.45 + y * 0.1) * (0.5 + 0.5 * sst(y / D.HB)) + 0.01 * Math.sin(x * 1.2 - y * 0.22 + 2);   // soft fabric folds
 const VS = 0.84;
@@ -476,7 +476,7 @@ function sleevePt(sg, ph, t) {
   const m = 1 + 0.05 * Math.sin(ph * 3 + t * 4.2 + sg) * (0.3 + t) + 0.025 * Math.sin(ph * 5 - t * 3);
   const ry = lerp(ry0, ry1, t) * m, rz = lerp(rz0, rz1, t) * m;
   const p = V3(sg * sx, sy, 0).addScaledVector(dir, L * t);
-  p.y -= 1.8 * t * t;                                                  // sleeve droops under its own weight
+  p.y -= 3.4 * t * t;                                                  // sleeve droops under its own weight
   return p.addScaledVector(up, ry * Math.cos(ph)).add(V3(0, 0, rz * Math.sin(ph)));
 }
 
@@ -486,6 +486,8 @@ function bodyShade(p) {
   let s = 1 + 0.8 * f;
   s *= 1 - 0.24 * Math.exp(-Math.hypot(ax - 26, p.y - 45) / 7);        // dark under the arm
   s *= 1 - 0.08 * Math.exp(-p.y / 5);                                  // slightly darker toward the hem
+  s *= 1 - 0.22 * Math.pow(ax / D.A, 3);                               // darker toward the side edges
+  s *= 0.9 + 0.1 * sst(p.y / D.HB);                                    // a bit darker toward the hem
   return clamp(s, 0.6, 1);
 }
 function sleeveShade(sg, ph, t) {
